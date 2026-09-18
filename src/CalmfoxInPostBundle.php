@@ -11,7 +11,7 @@ use Symfony\Component\HttpKernel\Bundle\Bundle;
 final class CalmfoxInPostBundle extends Bundle
 {
     /** Jedyne źródło prawdy o wersji; w composer.json pola „version" nie ma — Composer liczy je z tagu. */
-    public const VERSION = '0.2.0';
+    public const VERSION = '0.3.0';
 
     /** Klucz konfiguracji to `calmfox_inpost` (InPost to jedno słowo), nie wyliczone z nazwy klasy `calmfox_in_post`. */
     public function getContainerExtension(): ExtensionInterface
