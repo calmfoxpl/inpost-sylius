@@ -1,6 +1,6 @@
 {
     "name": "calmfox/inpost-sylius",
-    "description": "InPost (ShipX) dla Syliusa 2: wybór paczkomatu w koszyku bez mapy i dodatkowych tokenów, nadanie przesyłki jednym kliknięciem w zamówieniu, etykiety i numery nadania. Bez zmian w encjach sklepu.",
+    "description": "InPost (ShipX) for Sylius 2: parcel locker selection in checkout without a map or extra tokens, one-click dispatch from the order page, labels and tracking numbers. No changes to your shop entities.",
     "type": "sylius-plugin",
     "keywords": ["sylius", "sylius-plugin", "inpost", "paczkomaty", "shipx", "shipping", "parcel-locker"],
     "license": "MIT",

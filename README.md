@@ -1,16 +1,18 @@
 # calmfox/inpost-sylius
 
-InPost (ShipX) dla Syliusa 2. Paczkomaty i kurier z jednego konta, bez zmian w encjach sklepu.
+InPost (ShipX) for Sylius 2. Parcel lockers and courier from a single account, with no changes to your shop's entities.
 
-- **Koszyk:** klient wybiera paczkomat z listy najbliższych punktów (po kodzie pocztowym, mieście albo kodzie paczkomatu). Bez mapy osadzanej z cudzej domeny, bez dodatkowego tokenu, bez webpacka.
-- **Panel:** w zamówieniu, pod przesyłkami — „Nadaj w InPost" (gabaryt albo wymiary, ubezpieczenie podpowiedziane z wartości zamówienia, pobranie przy płatności przy odbiorze), status, numer nadania, etykieta PDF prosto z InPostu.
-- **Dane:** jedna tabela `calmfox_inpost_shipment` powiązana z przesyłką Syliusa. Numer nadania trafia też do pola `tracking` przesyłki, więc widzi go e-mail „wysłano" i konto klienta.
+[Wersja polska](README.pl.md)
 
-## Wymagania
+- **Checkout:** the customer picks a parcel locker from a list of the nearest points (by postcode, city or locker code). No third-party map embed, no extra token, no webpack.
+- **Admin:** on the order page, below the shipments — "Dispatch with InPost" (locker size or parcel dimensions, insurance suggested from the order total, cash on delivery when the order is paid on delivery), status, tracking number and the label PDF straight from InPost.
+- **Data:** one table, `calmfox_inpost_shipment`, linked to the Sylius shipment. The tracking number is also copied to the shipment's `tracking` field, so the "shipped" e-mail and the customer account see it.
 
-PHP 8.2+, Sylius 2.x, Symfony 6.4 / 7.x, Doctrine ORM. Konto InPost z dostępem do API ShipX.
+## Requirements
 
-## Instalacja
+PHP 8.2+, Sylius 2.x, Symfony 6.4 / 7.x, Doctrine ORM. An InPost account with ShipX API access.
+
+## Installation
 
 ```bash
 composer require calmfox/inpost-sylius
@@ -40,60 +42,60 @@ calmfox_inpost:
     api_token: '%env(INPOST_API_TOKEN)%'
     organization_id: '%env(INPOST_ORGANIZATION_ID)%'
     methods:
-        inpost_point: inpost_locker_standard   # kod metody dostawy w Syliusie → usługa ShipX
+        inpost_point: inpost_locker_standard   # Sylius shipping method code → ShipX service
         inpost: inpost_courier_standard
 ```
 
-Tabela i zasoby:
+Table and assets:
 
 ```bash
 bin/console doctrine:migrations:diff && bin/console doctrine:migrations:migrate
 bin/console assets:install
 ```
 
-Na koniec w panelu Syliusa załóż metody dostawy o kodach z mapy `methods` i przypnij je do kanału. To wszystko — mapowanie encji i miejsca w szablonach paczka dopina sama (Twig Hooks).
+Finally, create shipping methods in the Sylius admin with the codes from the `methods` map and enable them for your channel. That is all — entity mapping and template placement (Twig Hooks) are wired by the bundle itself.
 
-## Konfiguracja
+## Configuration
 
-| Klucz | Domyślnie | Znaczenie |
+| Key | Default | Meaning |
 |---|---|---|
-| `api_token`, `organization_id` | puste | Dane konta ShipX (Manager Paczek → Moje konto → API). Jeden komplet na sklep. |
-| `sandbox` | `false` | `true` kieruje na `sandbox-api-shipx-pl.easypack24.net` (token sandboxowy jest osobny). |
-| `methods` | `inpost_point`, `inpost` | Kod metody dostawy → usługa ShipX. Usługi `inpost_locker_*` wymagają wyboru punktu. |
-| `sending_method` | `dispatch_order` | Jak paczka trafia do InPostu: `dispatch_order` (odbiera kurier), `parcel_locker` (nadajesz w paczkomacie), `pop`, `any_point`, `branch`. |
-| `locker_template` | `small` | Gabaryt podpowiadany przy nadaniu: `small` (A), `medium` (B), `large` (C). |
-| `courier_parcel` | 400×300×150 mm, 2 kg | Wymiary i waga podpowiadane przy nadaniu kurierem. |
-| `insurance.mode` | `order_total` | `order_total` — ubezpieczenie na wartość zamówienia; `none` — bez ubezpieczenia. |
-| `insurance.max_amount` | `null` | Górny limit ubezpieczenia w groszach. Droższe zamówienia najlepiej odciąć regułą metody dostawy „wartość zamówienia ≤". |
-| `cod_payment_methods` | `[cash_on_delivery]` | Kody metod płatności oznaczających pobranie. Pobranie = kwota zamówienia; ubezpieczenie jest podnoszone co najmniej do kwoty pobrania. |
-| `points_cache_ttl` | `900` | Ile sekund trzymać wyniki wyszukiwania punktów w `cache.app`. |
+| `api_token`, `organization_id` | empty | ShipX account credentials (Parcel Manager → My account → API). One set per shop. |
+| `sandbox` | `false` | `true` targets `sandbox-api-shipx-pl.easypack24.net` (the sandbox token is a separate one). |
+| `methods` | `inpost_point`, `inpost` | Shipping method code → ShipX service. `inpost_locker_*` services require a pickup point. |
+| `sending_method` | `dispatch_order` | How the parcel reaches InPost: `dispatch_order` (courier pickup), `parcel_locker` (you drop it at a locker), `pop`, `any_point`, `branch`. |
+| `locker_template` | `small` | Size suggested when dispatching: `small` (A), `medium` (B), `large` (C). |
+| `courier_parcel` | 400×300×150 mm, 2 kg | Dimensions and weight suggested for courier shipments. |
+| `insurance.mode` | `order_total` | `order_total` — insure for the order value; `none` — no insurance. |
+| `insurance.max_amount` | `null` | Insurance cap in minor units. Cut off more expensive orders with the built-in "order total ≤" shipping method rule. |
+| `cod_payment_methods` | `[cash_on_delivery]` | Payment method codes that mean cash on delivery. COD equals the order total; insurance is raised to at least the COD amount. |
+| `points_cache_ttl` | `900` | Seconds to keep point search results in `cache.app`. |
 
-## Jak to działa
+## How it works
 
-**Wybór punktu** jest ukrytym polem formularza kroku dostawy (`ShipmentType`), nie osobnym żądaniem AJAX. Brak punktu przy metodzie paczkomatowej to zwykły błąd formularza; nic nie blokuje przycisków w JS. Punkt jest sprawdzany w publicznym API punktów InPostu — gdy to API nie odpowiada, sklep przyjmuje kod z listy i nie zatrzymuje sprzedaży. Druga zapora (`PointSelected`, grupa `sylius_checkout_complete`) łapie przypadek, w którym Sylius sam przestawił metodę po zmianie koszyka.
+**Point selection** is a hidden field of the shipping step form (`ShipmentType`), not a separate AJAX call. A missing point on a locker method is a regular form error; nothing disables buttons in JavaScript. The point is verified against InPost's public points API — if that API is down, the shop accepts the code from the list and keeps selling. A second guard (`PointSelected`, group `sylius_checkout_complete`) covers the case where Sylius switched the method on its own after a cart change.
 
-**Telefon** musi być polskim numerem komórkowym — InPost wysyła na niego kod odbioru. Paczka normalizuje zapis (`+48 605-203-478` → `605203478`) i odrzuca numery, których ShipX nie przyjmie, już w kroku dostawy.
+**Phone** must be a Polish mobile number — InPost sends the pickup code to it. The bundle normalizes the notation (`+48 605-203-478` → `605203478`) and rejects numbers ShipX would refuse already at the shipping step.
 
-**Nadanie** jest synchroniczne: operator klika, ShipX odpowiada w sekundę, a błąd walidacji wraca w czytelnej postaci (`receiver.phone: invalid`). Numer nadania pojawia się, gdy ShipX kupi ofertę — paczka czeka na niego kilka sekund, potem zostaje przycisk „Odśwież status" i polecenie do crona:
+**Dispatch** is synchronous: the operator clicks, ShipX answers within a second, and validation errors come back readable (`receiver.phone: invalid`). The tracking number appears once ShipX buys the offer — the bundle waits a few seconds for it; after that there is a "Refresh status" button and a cron-friendly command:
 
 ```bash
 bin/console calmfox:inpost:sync
 ```
 
-**Wygląd** — arkusz `public/inpost.css` jest neutralny. Dopasuj go zmiennymi `--calmfox-inpost-border`, `--calmfox-inpost-accent`, `--calmfox-inpost-muted` albo nadpisując klasy `.calmfox-inpost__*`. Szablony: `@CalmfoxInPost/shop/point_picker.html.twig`, `@CalmfoxInPost/admin/shipments.html.twig`.
+**Look** — `public/inpost.css` is neutral. Adjust it with `--calmfox-inpost-border`, `--calmfox-inpost-accent`, `--calmfox-inpost-muted`, or override the `.calmfox-inpost__*` classes. Templates: `@CalmfoxInPost/shop/point_picker.html.twig`, `@CalmfoxInPost/admin/shipments.html.twig`. Translations ship in Polish and English.
 
-## Czego paczka nie robi
+## What it does not do
 
-Zleceń odbioru przez kuriera, zwrotów, cenników ani mapy punktów. Pierwsze trzy operator ma w Managerze Paczek; mapa to świadoma decyzja — lista najbliższych punktów nie wymaga tokenu Geowidgetu ani ładowania skryptów InPostu na stronach sklepu.
+Courier pickup orders, returns, price lists, or a map of points. The first three live in InPost's Parcel Manager; the missing map is deliberate — a list of the nearest points needs no Geowidget token and loads no InPost scripts on your shop pages.
 
-## Testy
+## Tests
 
 ```bash
 vendor/bin/phpunit
 ```
 
-Rdzeń (`src/Core`) nie zależy od Symfony ani Syliusa. Testy klientów API używają `MockHttpClient` — żaden test nie łączy się z InPostem.
+The core (`src/Core`) does not depend on Symfony or Sylius. API client tests use `MockHttpClient` — no test talks to InPost.
 
-## Licencja
+## License
 
 MIT © Calmfox
