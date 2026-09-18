@@ -9,6 +9,24 @@ InPost (ShipX) dla Syliusa 2. Paczkomaty i kurier z jednego konta, bez zmian w e
 - **Ustawienia w panelu:** Konfiguracja → InPost trzyma dane konta produkcyjnego i sandboxowego (pole tokenu jest jednostronne, a token leży w bazie zaszyfrowany), przełącza między nimi, sprawdza połączenie i zbiera potrzebne adresy. Każda przesyłka pamięta tryb, w którym powstała.
 - **Dane:** jedna tabela `calmfox_inpost_shipment` powiązana z przesyłką Syliusa. Numer nadania trafia też do pola `tracking` przesyłki, więc widzi go e-mail „wysłano" i konto klienta.
 
+## Zrzuty ekranu
+
+**Koszyk — wybór paczkomatu** (lista najbliższych punktów i przycisk mapy; wygląd z motywu sklepu):
+
+![Wybór paczkomatu w koszyku](docs/checkout-picker.png)
+
+**Panel — Konfiguracja → InPost** (dane kont produkcyjnego i sandbox, przełącznik trybu, test połączenia, adresy):
+
+![Ekran ustawień InPost](docs/admin-settings.png)
+
+**Panel — zamówienie** (nadanie, status, etykieta):
+
+![Blok InPost w zamówieniu](docs/admin-order.png)
+
+**Panel — metody dostawy** (ostrzeżenie z linkiem, gdy aktywny tryb nie ma danych konta):
+
+![Ostrzeżenie na liście metod dostawy](docs/admin-alert.png)
+
 ## Wymagania
 
 PHP 8.2+, Sylius 2.x, Symfony 6.4 / 7.x, Doctrine ORM. Konto InPost z dostępem do API ShipX.
@@ -57,7 +75,7 @@ bin/console doctrine:migrations:diff && bin/console doctrine:migrations:migrate
 bin/console assets:install
 ```
 
-Na koniec w panelu Syliusa załóż metody dostawy o kodach z mapy `methods`, przypnij je do kanału i wpisz dane konta w **Konfiguracja → InPost**. To wszystko — mapowanie encji i miejsca w szablonach paczka dopina sama (Twig Hooks).
+Na koniec w panelu Syliusa załóż metody dostawy o kodach z mapy `methods`, przypnij je do kanału i wpisz dane konta w **Konfiguracja → InPost** (dopóki tego nie zrobisz, ekrany metod dostawy pokazują ostrzeżenie z linkiem). To wszystko — mapowanie encji i miejsca w szablonach paczka dopina sama (Twig Hooks).
 
 ## Konfiguracja
 

@@ -18,6 +18,7 @@ use Calmfox\InPostBundle\Shipping\MethodMap;
 use Calmfox\InPostBundle\Shipping\ShipmentRequestFactory;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\ShipmentInterface;
+use Sylius\Component\Shipping\Model\ShippingMethodInterface;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
@@ -45,7 +46,22 @@ final class InPostExtension extends AbstractExtension
             new TwigFunction('calmfox_inpost_for_shipment', $this->forShipment(...)),
             new TwigFunction('calmfox_inpost_geowidget', $this->geowidget->forCheckout(...)),
             new TwigFunction('calmfox_inpost_admin_rows', $this->adminRows(...)),
+            new TwigFunction('calmfox_inpost_setup', $this->setup(...)),
         ];
+    }
+
+    /**
+     * Czy ostrzegać na ekranach metod dostawy. Na liście — zawsze, gdy aktywny tryb nie ma danych
+     * konta; przy edycji — tylko dla metody, którą obsługuje InPost.
+     *
+     * @return array{show: bool, sandbox: bool}
+     */
+    public function setup(mixed $resource = null): array
+    {
+        $sandbox = $this->environment->isSandbox();
+        $relevant = !$resource instanceof ShippingMethodInterface || null !== $this->methodMap->serviceFor($resource);
+
+        return ['show' => $relevant && !$this->clients->get($sandbox)->isConfigured(), 'sandbox' => $sandbox];
     }
 
     public function forShipment(?ShipmentInterface $shipment): ?InPostShipment

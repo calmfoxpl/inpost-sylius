@@ -56,6 +56,14 @@ final class CalmfoxInPostExtension extends Extension implements PrependExtension
             'sylius_shop.checkout.select_shipping.content.form.shipments.shipment' => [
                 'calmfox_inpost_point' => ['template' => '@CalmfoxInPost/shop/point_picker.html.twig', 'priority' => -100],
             ],
+            // Ekrany metod dostawy: ostrzeżenie o brakujących danych konta — na liście między nagłówkiem (200)
+            // a tabelą (100), przy edycji między nagłówkiem (300) a formularzem (100).
+            'sylius_admin.shipping_method.index.content' => [
+                'calmfox_inpost_setup' => ['template' => '@CalmfoxInPost/admin/setup_alert.html.twig', 'priority' => 150],
+            ],
+            'sylius_admin.shipping_method.update.content' => [
+                'calmfox_inpost_setup' => ['template' => '@CalmfoxInPost/admin/setup_alert.html.twig', 'priority' => 250],
+            ],
             // Pod tabelą przesyłek w zamówieniu (nagłówek 100, pozycje 0).
             'sylius_admin.order.show.content.sections.shipments' => [
                 'calmfox_inpost' => ['template' => '@CalmfoxInPost/admin/shipments.html.twig', 'priority' => -100],

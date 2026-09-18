@@ -86,6 +86,11 @@ calmfox_inpost:
             production_not_configured: 'Cannot switch to production: save the token and organization ID first.'
             test_ok: 'Connection works. Organization: %name%.'
             test_missing_services: 'Connection works (organization: %name%), but the account lacks these services: %services%.'
+    setup_alert:
+        title: 'InPost is not configured.'
+        body_production: 'The API token or organization ID is missing — customers can choose InPost delivery, but shipments cannot be dispatched.'
+        body_sandbox: 'The shop is in sandbox mode and the sandbox account has no API token or organization ID — shipments cannot be dispatched.'
+        action: 'Go to InPost settings'
     links:
         title: 'Useful links'
         manager: 'Parcel Manager — production account, API token, pickup orders'

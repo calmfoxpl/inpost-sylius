@@ -1,0 +1,15 @@
+{# Ostrzeżenie na ekranach metod dostawy: paczka jest zainstalowana, ale aktywny tryb nie ma danych
+   konta — klient wybierze InPost w koszyku, a operator nie nada przesyłki. Przy edycji pokazujemy je
+   tylko dla metod obsługiwanych przez InPost. #}
+{% set setup = calmfox_inpost_setup(hookable_metadata.context.resource|default(null)) %}
+{% if setup.show %}
+    <div class="container-xl">
+        <div class="alert alert-warning d-flex flex-wrap align-items-center gap-3 mt-3 mb-3" role="alert" data-calmfox-inpost-setup-alert>
+            <div class="flex-fill">
+                <strong>{{ 'calmfox_inpost.setup_alert.title'|trans }}</strong>
+                {{ (setup.sandbox ? 'calmfox_inpost.setup_alert.body_sandbox' : 'calmfox_inpost.setup_alert.body_production')|trans }}
+            </div>
+            <a class="btn btn-warning" href="{{ path('calmfox_inpost_admin_settings') }}">{{ 'calmfox_inpost.setup_alert.action'|trans }}</a>
+        </div>
+    </div>
+{% endif %}

@@ -86,6 +86,11 @@ calmfox_inpost:
             production_not_configured: 'Nie można włączyć trybu produkcyjnego: najpierw zapisz token i ID organizacji.'
             test_ok: 'Połączenie działa. Organizacja: %name%.'
             test_missing_services: 'Połączenie działa (organizacja: %name%), ale konto nie ma usług: %services%.'
+    setup_alert:
+        title: 'InPost nie jest skonfigurowany.'
+        body_production: 'Brakuje tokenu API albo ID organizacji — klienci mogą wybrać dostawę InPost, ale przesyłek nie da się nadać.'
+        body_sandbox: 'Sklep jest w trybie sandbox, a konto sandbox nie ma tokenu API albo ID organizacji — przesyłek nie da się nadać.'
+        action: 'Przejdź do ustawień InPost'
     links:
         title: 'Przydatne adresy'
         manager: 'Manager Paczek — konto produkcyjne, token API, zlecenia odbioru'

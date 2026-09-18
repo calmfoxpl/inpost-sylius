@@ -9,6 +9,24 @@ InPost (ShipX) for Sylius 2. Parcel lockers and courier from a single account, w
 - **Settings in the admin:** Configuration → InPost holds the credentials of the production and the sandbox account (the token field is write-only and stored encrypted), switches between the two, tests the connection and lists the links you need. Every shipment remembers the mode it was created in.
 - **Data:** one table, `calmfox_inpost_shipment`, linked to the Sylius shipment. The tracking number is also copied to the shipment's `tracking` field, so the "shipped" e-mail and the customer account see it.
 
+## Screenshots
+
+**Checkout — choosing a parcel locker** (list of nearest points plus the map button; styled by the shop's theme):
+
+![Parcel locker picker in checkout](docs/checkout-picker.png)
+
+**Admin — Configuration → InPost** (credentials for production and sandbox, mode switch, connection test, links):
+
+![InPost settings screen](docs/admin-settings.png)
+
+**Admin — order page** (dispatch, status, label):
+
+![InPost block on the order page](docs/admin-order.png)
+
+**Admin — shipping methods** (warning with a link when the active mode has no credentials):
+
+![Setup warning on the shipping methods list](docs/admin-alert.png)
+
 ## Requirements
 
 PHP 8.2+, Sylius 2.x, Symfony 6.4 / 7.x, Doctrine ORM. An InPost account with ShipX API access.
@@ -57,7 +75,7 @@ bin/console doctrine:migrations:diff && bin/console doctrine:migrations:migrate
 bin/console assets:install
 ```
 
-Finally, create shipping methods in the Sylius admin with the codes from the `methods` map, enable them for your channel, and enter the account credentials under **Configuration → InPost**. That is all — entity mapping and template placement (Twig Hooks) are wired by the bundle itself.
+Finally, create shipping methods in the Sylius admin with the codes from the `methods` map, enable them for your channel, and enter the account credentials under **Configuration → InPost** (until you do, the shipping methods screens show a warning with a link there). That is all — entity mapping and template placement (Twig Hooks) are wired by the bundle itself.
 
 ## Configuration
 
