@@ -101,6 +101,68 @@
                 .catch(function () { if (ticket === pending) { render([]); say(root.dataset.textError); } });
         }
 
+        // ── Mapa: oficjalny Geowidget InPostu, ładowany przy pierwszym otwarciu ──────────────
+        var mapOpen = root.querySelector('[data-calmfox-inpost-map-open]');
+        var mapDialog = root.querySelector('[data-calmfox-inpost-map]');
+        var mapBody = root.querySelector('[data-calmfox-inpost-map-body]');
+        var mapEvent = 'calmfoxinpostpoint' + Math.random().toString(36).slice(2, 8);
+        var mapReady = false;
+
+        function loadWidget(done, failed) {
+            if (window.customElements && window.customElements.get('inpost-geowidget')) { done(); return; }
+
+            var link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = root.dataset.mapStylesheet;
+            document.head.appendChild(link);
+
+            var script = document.createElement('script');
+            script.src = root.dataset.mapScript;
+            script.defer = true;
+            script.onload = done;
+            script.onerror = failed;
+            document.head.appendChild(script);
+        }
+
+        function openMap() {
+            if (typeof mapDialog.showModal === 'function') { mapDialog.showModal(); } else { mapDialog.setAttribute('open', ''); }
+            if (mapReady) return;
+            mapReady = true;
+
+            loadWidget(function () {
+                var widget = document.createElement('inpost-geowidget');
+                widget.setAttribute('token', root.dataset.mapToken);
+                widget.setAttribute('language', root.dataset.mapLanguage || 'pl');
+                widget.setAttribute('config', root.dataset.mapConfig || 'parcelcollect');
+                widget.setAttribute('onpoint', mapEvent);
+                mapBody.appendChild(widget);
+            }, function () {
+                mapReady = false;
+                closeMap();
+                say(root.dataset.textMapError);
+            });
+        }
+
+        function closeMap() {
+            if (typeof mapDialog.close === 'function' && mapDialog.open) { mapDialog.close(); } else { mapDialog.removeAttribute('open'); }
+        }
+
+        if (mapOpen && mapDialog) {
+            mapOpen.addEventListener('click', openMap);
+            root.querySelector('[data-calmfox-inpost-map-close]').addEventListener('click', closeMap);
+            mapDialog.addEventListener('click', function (event) { if (event.target === mapDialog) closeMap(); });
+
+            // Widget zgłasza wybór zdarzeniem o nazwie z atrybutu `onpoint`; szczegóły punktu są w event.detail.
+            document.addEventListener(mapEvent, function (event) {
+                var detail = event.detail || {};
+                if (!detail.name) return;
+                var address = detail.address || {};
+                choose({ name: detail.name, address: [address.line1, address.line2].filter(Boolean).join(', ') });
+                say('');
+                closeMap();
+            });
+        }
+
         function sync() {
             var active = radios().some(function (r) { return r.checked && methods.indexOf(r.value) !== -1; });
             root.hidden = !active;

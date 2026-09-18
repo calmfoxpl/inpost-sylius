@@ -17,12 +17,20 @@ final class Links
     public const TRACKING = 'https://inpost.pl/sledzenie-przesylek';
     public const POINT_FINDER = 'https://inpost.pl/znajdz-paczkomat';
     public const INPOST_CONTACT = 'https://inpost.pl/kontakt';
+    public const GEOWIDGET = 'https://geowidget.inpost.pl';
+    public const GEOWIDGET_SANDBOX = 'https://sandbox-easy-geowidget-sdk.easypack24.net';
+    public const GEOWIDGET_DOCS = 'https://dokumentacja-inpost.atlassian.net/wiki/spaces/PL/pages/50069505/Geowidget+v5';
     public const PACKAGE = 'https://github.com/calmfoxpl/inpost-sylius';
     public const PACKAGE_ISSUES = 'https://github.com/calmfoxpl/inpost-sylius/issues';
 
     public static function tracking(string $trackingNumber): string
     {
         return self::TRACKING.'?number='.rawurlencode($trackingNumber);
+    }
+
+    public static function geowidget(bool $sandbox): string
+    {
+        return $sandbox ? self::GEOWIDGET_SANDBOX : self::GEOWIDGET;
     }
 
     public static function manager(bool $sandbox): string
@@ -39,6 +47,7 @@ final class Links
             ['key' => 'manager', 'url' => self::MANAGER],
             ['key' => 'manager_sandbox', 'url' => self::MANAGER_SANDBOX],
             ['key' => 'api_docs', 'url' => self::API_DOCS],
+            ['key' => 'geowidget_docs', 'url' => self::GEOWIDGET_DOCS],
             ['key' => 'tracking', 'url' => self::TRACKING],
             ['key' => 'point_finder', 'url' => self::POINT_FINDER],
             ['key' => 'inpost_contact', 'url' => self::INPOST_CONTACT],

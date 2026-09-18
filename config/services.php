@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Calmfox\InPostBundle\Api\PointsClient;
 use Calmfox\InPostBundle\Api\ShipXClients;
+use Calmfox\InPostBundle\Checkout\Geowidget;
 use Calmfox\InPostBundle\Checkout\ShipmentTypeExtension;
 use Calmfox\InPostBundle\Command\SyncCommand;
 use Calmfox\InPostBundle\Controller\AdminSettingsController;
@@ -53,6 +54,13 @@ return static function (ContainerConfigurator $container): void {
         service('http_client'),
         service('cache.app')->nullOnInvalid(),
         param('calmfox_inpost.points_cache_ttl'),
+    ]);
+
+    $services->set(Geowidget::class)->args([
+        service(Environment::class),
+        service(SettingsRepository::class),
+        ['production' => param('calmfox_inpost.geowidget_token'), 'sandbox' => param('calmfox_inpost.sandbox_geowidget_token')],
+        param('calmfox_inpost.geowidget_config'),
     ]);
 
     $services->set(MethodMap::class)->args([param('calmfox_inpost.methods')]);
@@ -118,6 +126,7 @@ return static function (ContainerConfigurator $container): void {
             service(CredentialsProvider::class),
             service(SettingsRepository::class),
             service(SecretBox::class),
+            service(Geowidget::class),
             service('security.csrf.token_manager'),
             service('router'),
             service('translator'),
@@ -140,6 +149,7 @@ return static function (ContainerConfigurator $container): void {
             service(InsurancePolicy::class),
             service(ShipXClients::class),
             service(Environment::class),
+            service(Geowidget::class),
             param('calmfox_inpost.locker_template'),
             param('calmfox_inpost.courier_parcel'),
         ])

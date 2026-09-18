@@ -39,6 +39,13 @@ class Settings
     #[ORM\Column(name: 'sandbox_organization_id', type: Types::STRING, length: 32, nullable: true)]
     private ?string $sandboxOrganizationId = null;
 
+    /** Token Geowidgetu jest publiczny z natury — ląduje w HTML-u kroku dostawy — więc leży jawnie. */
+    #[ORM\Column(name: 'geowidget_token', type: Types::TEXT, nullable: true)]
+    private ?string $geowidgetToken = null;
+
+    #[ORM\Column(name: 'sandbox_geowidget_token', type: Types::TEXT, nullable: true)]
+    private ?string $sandboxGeowidgetToken = null;
+
     #[ORM\Column(name: 'updated_at', type: Types::DATETIME_IMMUTABLE)]
     private \DateTimeImmutable $updatedAt;
 
@@ -91,6 +98,22 @@ class Settings
             $this->sandboxOrganizationId = $organizationId;
         } else {
             $this->organizationId = $organizationId;
+        }
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    public function getGeowidgetToken(bool $sandbox): ?string
+    {
+        return $sandbox ? $this->sandboxGeowidgetToken : $this->geowidgetToken;
+    }
+
+    public function setGeowidgetToken(bool $sandbox, ?string $token): void
+    {
+        $token = null === $token || '' === trim($token) ? null : trim($token);
+        if ($sandbox) {
+            $this->sandboxGeowidgetToken = $token;
+        } else {
+            $this->geowidgetToken = $token;
         }
         $this->updatedAt = new \DateTimeImmutable();
     }

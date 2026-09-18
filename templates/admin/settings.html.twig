@@ -76,6 +76,15 @@
                                             <input type="text" inputmode="numeric" class="form-control" id="calmfox-inpost-org-{{ suffix }}" name="organization_id" value="{{ environment.panelOrganizationId }}">
                                         </div>
 
+                                        <div class="mb-3">
+                                            <label class="form-label" for="calmfox-inpost-geowidget-{{ suffix }}">
+                                                {{ 'calmfox_inpost.settings.geowidget_token'|trans }}
+                                                <span class="badge ms-1 {{ environment.geowidgetSource == 'none' ? 'bg-secondary-lt' : 'bg-green-lt' }}">{{ (environment.geowidgetSource == 'none' ? 'calmfox_inpost.settings.geowidget_off' : 'calmfox_inpost.settings.source_' ~ environment.geowidgetSource)|trans }}</span>
+                                            </label>
+                                            <textarea class="form-control font-monospace small" rows="2" id="calmfox-inpost-geowidget-{{ suffix }}" name="geowidget_token" spellcheck="false">{{ environment.panelGeowidgetToken }}</textarea>
+                                            <div class="form-hint">{{ 'calmfox_inpost.settings.geowidget_hint'|trans }}</div>
+                                        </div>
+
                                         <button type="submit" class="btn btn-outline-primary">{{ 'calmfox_inpost.settings.save_credentials'|trans }}</button>
                                     </form>
                                 </div>

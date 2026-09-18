@@ -7,6 +7,7 @@ namespace Calmfox\InPostBundle\Controller;
 use Calmfox\InPostBundle\Api\ShipXClients;
 use Calmfox\InPostBundle\Api\ShipXException;
 use Calmfox\InPostBundle\CalmfoxInPostBundle;
+use Calmfox\InPostBundle\Checkout\Geowidget;
 use Calmfox\InPostBundle\Core\Links;
 use Calmfox\InPostBundle\Core\SecretBox;
 use Calmfox\InPostBundle\Repository\SettingsRepository;
@@ -44,6 +45,7 @@ final class AdminSettingsController
         private readonly CredentialsProvider $credentials,
         private readonly SettingsRepository $settings,
         private readonly SecretBox $secretBox,
+        private readonly Geowidget $geowidget,
         private readonly CsrfTokenManagerInterface $csrfTokenManager,
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly TranslatorInterface $translator,
@@ -91,6 +93,15 @@ final class AdminSettingsController
             return $this->back();
         }
         $settings->setOrganizationId($sandbox, $organizationId);
+
+        // Token mapy jest publiczny (trafia do HTML-a koszyka), więc pole jest zwykłe: widać go i puste = usuń.
+        $geowidgetToken = trim((string) $request->request->get('geowidget_token', ''));
+        if ('' !== $geowidgetToken && 1 !== preg_match('/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/', $geowidgetToken)) {
+            $this->flash($request, 'error', $this->translator->trans('calmfox_inpost.settings.flash.geowidget_malformed'));
+
+            return $this->back();
+        }
+        $settings->setGeowidgetToken($sandbox, $geowidgetToken);
 
         $this->settings->flush();
         $this->flash($request, 'success', $this->translator->trans('calmfox_inpost.settings.flash.credentials_saved'));
@@ -154,6 +165,8 @@ final class AdminSettingsController
             'organizationId' => $credentials->organizationId,
             'panelOrganizationId' => (string) $stored?->getOrganizationId($sandbox),
             'hasPanelToken' => null !== $stored?->getEncryptedToken($sandbox),
+            'panelGeowidgetToken' => (string) $stored?->getGeowidgetToken($sandbox),
+            'geowidgetSource' => $this->geowidget->token($sandbox)['source'],
             'manager' => Links::manager($sandbox),
         ];
     }

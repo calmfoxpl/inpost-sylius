@@ -8,6 +8,10 @@
     {% set inpost_shipment = calmfox_inpost_for_shipment(form.vars.data) %}
     {% set order = hookable_metadata.context.order|default(null) %}
     {% set postcode = order and order.shippingAddress ? order.shippingAddress.postcode : '' %}
+    {# Mapa (Geowidget InPostu) tylko wtedy, gdy sklep ma token dla bieżącego trybu; skrypt widgetu
+       ładuje się dopiero po kliknięciu „Wybierz na mapie", nie z każdą odsłoną kroku dostawy. #}
+    {% set map = calmfox_inpost_geowidget() %}
+    {% set map_language = app.request.locale|slice(0, 2) in ['pl', 'en', 'uk'] ? app.request.locale|slice(0, 2) : 'pl' %}
 
     <link rel="stylesheet" href="{{ asset('bundles/calmfoxinpost/inpost.css') }}?v={{ asset_version }}">
 
@@ -22,6 +26,14 @@
          data-text-query="{{ 'calmfox_inpost.picker.query_invalid'|trans }}"
          data-text-choose="{{ 'calmfox_inpost.picker.choose'|trans }}"
          data-text-loading="{{ 'calmfox_inpost.picker.loading'|trans }}"
+         {% if map %}
+         data-map-token="{{ map.token }}"
+         data-map-script="{{ map.script }}"
+         data-map-stylesheet="{{ map.stylesheet }}"
+         data-map-config="{{ map.config }}"
+         data-map-language="{{ map_language }}"
+         data-text-map-error="{{ 'calmfox_inpost.picker.map_error'|trans }}"
+         {% endif %}
          hidden>
         {{ form_widget(form.inpostPoint, {'attr': {'data-calmfox-inpost-value': ''}}) }}
 
@@ -32,6 +44,10 @@
             <strong data-calmfox-inpost-selected-name>{{ inpost_shipment ? inpost_shipment.targetPoint : '' }}</strong>
             <span data-calmfox-inpost-selected-address>{{ inpost_shipment ? inpost_shipment.targetPointAddress : '' }}</span>
         </p>
+
+        {% if map %}
+            <button type="button" class="btn btn-outline-secondary calmfox-inpost__button calmfox-inpost__map-button" data-calmfox-inpost-map-open>{{ 'calmfox_inpost.picker.map_open'|trans }}</button>
+        {% endif %}
 
         <div class="calmfox-inpost__search">
             <label class="calmfox-inpost__label" for="calmfox-inpost-q-{{ form.vars.id }}">{{ 'calmfox_inpost.picker.label'|trans }}</label>
@@ -45,6 +61,16 @@
 
         <p class="calmfox-inpost__message" data-calmfox-inpost-message role="status" hidden></p>
         <ul class="calmfox-inpost__results" data-calmfox-inpost-results></ul>
+
+        {% if map %}
+            <dialog class="calmfox-inpost__dialog" data-calmfox-inpost-map aria-label="{{ 'calmfox_inpost.picker.map_title'|trans }}">
+                <div class="calmfox-inpost__dialog-bar">
+                    <strong>{{ 'calmfox_inpost.picker.map_title'|trans }}</strong>
+                    <button type="button" class="calmfox-inpost__dialog-close" data-calmfox-inpost-map-close aria-label="{{ 'calmfox_inpost.picker.map_close'|trans }}">×</button>
+                </div>
+                <div class="calmfox-inpost__dialog-body" data-calmfox-inpost-map-body></div>
+            </dialog>
+        {% endif %}
     </div>
 
     <script src="{{ asset('bundles/calmfoxinpost/picker.js') }}?v={{ asset_version }}" defer></script>

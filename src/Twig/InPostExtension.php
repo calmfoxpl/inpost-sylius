@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Calmfox\InPostBundle\Twig;
 
 use Calmfox\InPostBundle\Api\ShipXClients;
+use Calmfox\InPostBundle\Checkout\Geowidget;
 use Calmfox\InPostBundle\Controller\AdminShipmentController;
 use Calmfox\InPostBundle\Core\InsurancePolicy;
 use Calmfox\InPostBundle\Core\Links;
@@ -31,6 +32,7 @@ final class InPostExtension extends AbstractExtension
         private readonly InsurancePolicy $insurancePolicy,
         private readonly ShipXClients $clients,
         private readonly Environment $environment,
+        private readonly Geowidget $geowidget,
         private readonly string $lockerTemplate,
         private readonly array $courierParcel,
     ) {
@@ -41,6 +43,7 @@ final class InPostExtension extends AbstractExtension
         return [
             new TwigFunction('calmfox_inpost_point_methods', $this->methodMap->pointMethodCodes(...)),
             new TwigFunction('calmfox_inpost_for_shipment', $this->forShipment(...)),
+            new TwigFunction('calmfox_inpost_geowidget', $this->geowidget->forCheckout(...)),
             new TwigFunction('calmfox_inpost_admin_rows', $this->adminRows(...)),
         ];
     }
