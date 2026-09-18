@@ -1,0 +1,31 @@
+/* calmfox/inpost-sylius — neutralne style wyboru punktu. Kolory dziedziczą z motywu sklepu;
+   nadpisuj zmienne --calmfox-inpost-* albo same klasy. */
+.calmfox-inpost {
+    --calmfox-inpost-border: rgba(0, 0, 0, 0.15);
+    --calmfox-inpost-accent: currentColor;
+    --calmfox-inpost-muted: rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 0 0 2rem;
+    padding: 1.25rem;
+    border: 1px solid var(--calmfox-inpost-border);
+}
+.calmfox-inpost[hidden] { display: none; }
+.calmfox-inpost__title { margin: 0; font-weight: 600; }
+.calmfox-inpost__selected { margin: 0; display: flex; flex-wrap: wrap; gap: 0.25rem 0.5rem; align-items: baseline; }
+.calmfox-inpost__selected-label, .calmfox-inpost__label, .calmfox-inpost__meta, .calmfox-inpost__message { color: var(--calmfox-inpost-muted); font-size: 0.875em; }
+.calmfox-inpost__label { display: block; margin-bottom: 0.35rem; }
+.calmfox-inpost__row { display: flex; gap: 0.5rem; }
+.calmfox-inpost__input { flex: 1 1 auto; min-width: 0; }
+.calmfox-inpost__button { flex: 0 0 auto; }
+.calmfox-inpost__message { margin: 0; }
+.calmfox-inpost__results { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; max-height: 22rem; overflow-y: auto; }
+.calmfox-inpost__pick { display: grid; grid-template-columns: minmax(5.5rem, auto) 1fr; gap: 0.1rem 0.9rem; width: 100%; padding: 0.7rem 0.9rem; text-align: left; background: transparent; color: inherit; border: 1px solid var(--calmfox-inpost-border); cursor: pointer; }
+.calmfox-inpost__pick:hover, .calmfox-inpost__pick:focus-visible { border-color: var(--calmfox-inpost-accent); outline: none; }
+.calmfox-inpost__pick strong { grid-row: span 2; align-self: center; }
+.calmfox-inpost__point.is-selected .calmfox-inpost__pick { border-color: var(--calmfox-inpost-accent); box-shadow: 0 0 0 1px var(--calmfox-inpost-accent); }
+@media (max-width: 480px) {
+    .calmfox-inpost__pick { grid-template-columns: 1fr; }
+    .calmfox-inpost__pick strong { grid-row: auto; }
+}

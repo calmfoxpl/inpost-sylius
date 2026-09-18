@@ -1,0 +1,5 @@
+calmfox_inpost:
+    checkout:
+        point_required: 'Wybierz paczkomat, do którego mamy wysłać zamówienie.'
+        point_unknown: 'Paczkomat %point% nie istnieje albo jest wyłączony. Wybierz inny punkt.'
+        phone_invalid: 'InPost wysyła kod odbioru SMS-em. Wróć do adresu i podaj polski numer komórkowy (9 cyfr).'

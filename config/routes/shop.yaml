@@ -1,0 +1,6 @@
+# Importuj w sklepie bez prefiksu języka — odpowiedź to JSON, nie strona:
+#   calmfox_inpost_shop: { resource: '@CalmfoxInPostBundle/config/routes/shop.yaml' }
+calmfox_inpost_shop_points:
+    path: /inpost/points
+    methods: [GET]
+    controller: Calmfox\InPostBundle\Controller\PointSearchController

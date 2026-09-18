@@ -1,0 +1,19 @@
+# Importuj z prefiksem panelu, żeby trasy objęła zapora administratora:
+#   calmfox_inpost_admin: { resource: '@CalmfoxInPostBundle/config/routes/admin.yaml', prefix: '/%sylius_admin.path_name%' }
+calmfox_inpost_admin_dispatch:
+    path: /inpost/shipments/{id}/dispatch
+    methods: [POST]
+    controller: Calmfox\InPostBundle\Controller\AdminShipmentController::dispatch
+    requirements: { id: '\d+' }
+
+calmfox_inpost_admin_refresh:
+    path: /inpost/shipments/{id}/refresh
+    methods: [POST]
+    controller: Calmfox\InPostBundle\Controller\AdminShipmentController::refresh
+    requirements: { id: '\d+' }
+
+calmfox_inpost_admin_label:
+    path: /inpost/shipments/{id}/label
+    methods: [GET]
+    controller: Calmfox\InPostBundle\Controller\AdminShipmentController::label
+    requirements: { id: '\d+' }

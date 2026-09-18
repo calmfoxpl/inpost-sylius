@@ -1,0 +1,51 @@
+{# Wybór paczkomatu pod listą metod dostawy. Widoczny tylko przy metodzie „do punktu";
+   pole formularza jest ukryte i trafia do zwykłego zatwierdzenia kroku dostawy. #}
+{% set form = hookable_metadata.context.form %}
+
+{% if form.inpostPoint is defined %}
+    {# Wersja w adresie: serwery często podają /bundles z długim cache, a plik nie ma sumy w nazwie. #}
+    {% set asset_version = constant('Calmfox\\InPostBundle\\CalmfoxInPostBundle::VERSION') %}
+    {% set inpost_shipment = calmfox_inpost_for_shipment(form.vars.data) %}
+    {% set order = hookable_metadata.context.order|default(null) %}
+    {% set postcode = order and order.shippingAddress ? order.shippingAddress.postcode : '' %}
+
+    <link rel="stylesheet" href="{{ asset('bundles/calmfoxinpost/inpost.css') }}?v={{ asset_version }}">
+
+    <div class="calmfox-inpost"
+         data-calmfox-inpost
+         data-methods="{{ calmfox_inpost_point_methods()|json_encode|e('html_attr') }}"
+         data-method-field="{{ form.method.vars.full_name }}"
+         data-url="{{ path('calmfox_inpost_shop_points') }}"
+         data-postcode="{{ postcode }}"
+         data-text-empty="{{ 'calmfox_inpost.picker.empty'|trans }}"
+         data-text-error="{{ 'calmfox_inpost.picker.error'|trans }}"
+         data-text-query="{{ 'calmfox_inpost.picker.query_invalid'|trans }}"
+         data-text-choose="{{ 'calmfox_inpost.picker.choose'|trans }}"
+         data-text-loading="{{ 'calmfox_inpost.picker.loading'|trans }}"
+         hidden>
+        {{ form_widget(form.inpostPoint, {'attr': {'data-calmfox-inpost-value': ''}}) }}
+
+        <p class="calmfox-inpost__title">{{ 'calmfox_inpost.picker.title'|trans }}</p>
+
+        <p class="calmfox-inpost__selected" data-calmfox-inpost-selected {% if not (inpost_shipment and inpost_shipment.targetPoint) %}hidden{% endif %}>
+            <span class="calmfox-inpost__selected-label">{{ 'calmfox_inpost.picker.selected'|trans }}</span>
+            <strong data-calmfox-inpost-selected-name>{{ inpost_shipment ? inpost_shipment.targetPoint : '' }}</strong>
+            <span data-calmfox-inpost-selected-address>{{ inpost_shipment ? inpost_shipment.targetPointAddress : '' }}</span>
+        </p>
+
+        <div class="calmfox-inpost__search">
+            <label class="calmfox-inpost__label" for="calmfox-inpost-q-{{ form.vars.id }}">{{ 'calmfox_inpost.picker.label'|trans }}</label>
+            <div class="calmfox-inpost__row">
+                <input type="text" id="calmfox-inpost-q-{{ form.vars.id }}" class="form-control calmfox-inpost__input"
+                       data-calmfox-inpost-query autocomplete="off" inputmode="search"
+                       placeholder="{{ 'calmfox_inpost.picker.placeholder'|trans }}">
+                <button type="button" class="btn btn-outline-secondary calmfox-inpost__button" data-calmfox-inpost-search>{{ 'calmfox_inpost.picker.search'|trans }}</button>
+            </div>
+        </div>
+
+        <p class="calmfox-inpost__message" data-calmfox-inpost-message role="status" hidden></p>
+        <ul class="calmfox-inpost__results" data-calmfox-inpost-results></ul>
+    </div>
+
+    <script src="{{ asset('bundles/calmfoxinpost/picker.js') }}?v={{ asset_version }}" defer></script>
+{% endif %}

@@ -1,0 +1,88 @@
+{# Blok InPost pod tabelą przesyłek w zamówieniu: stan nadania i trzy akcje operatora. #}
+{% set order = hookable_metadata.context.resource %}
+{% set rows = calmfox_inpost_admin_rows(order) %}
+
+{% for row in rows %}
+    {% set s = row.shipment %}
+    <div class="card-body border-top" data-calmfox-inpost-admin>
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+            <strong>InPost</strong>
+            <span class="badge bg-secondary-lt">{{ s.service }}</span>
+            {% if row.statusKey %}
+                {% set label = row.statusKey|trans %}
+                <span class="badge {{ row.isFinal ? 'bg-green-lt' : 'bg-blue-lt' }}">{{ label == row.statusKey ? s.status : label }}</span>
+            {% else %}
+                <span class="badge bg-yellow-lt">{{ 'calmfox_inpost.admin.not_dispatched'|trans }}</span>
+            {% endif %}
+        </div>
+
+        <dl class="row mb-2 small">
+            {% if row.requiresPoint %}
+                <dt class="col-sm-4 text-secondary fw-normal">{{ 'calmfox_inpost.admin.point'|trans }}</dt>
+                <dd class="col-sm-8">{{ s.targetPoint ?: '—' }}{% if s.targetPointAddress %} · {{ s.targetPointAddress }}{% endif %}</dd>
+            {% endif %}
+            {% if s.trackingNumber %}
+                <dt class="col-sm-4 text-secondary fw-normal">{{ 'calmfox_inpost.admin.tracking'|trans }}</dt>
+                <dd class="col-sm-8"><a href="https://inpost.pl/sledzenie-przesylek?number={{ s.trackingNumber|url_encode }}" target="_blank" rel="noopener">{{ s.trackingNumber }}</a></dd>
+            {% endif %}
+            {% if row.codAmount %}
+                <dt class="col-sm-4 text-secondary fw-normal">{{ 'calmfox_inpost.admin.cod'|trans }}</dt>
+                <dd class="col-sm-8">{{ (row.codAmount / 100)|number_format(2, ',', ' ') }} {{ order.currencyCode }}</dd>
+            {% endif %}
+        </dl>
+
+        {% if s.lastError and not s.dispatched %}
+            <div class="alert alert-danger py-2 small" role="alert">{{ s.lastError }}</div>
+        {% endif %}
+
+        {% if not row.configured %}
+            <div class="alert alert-warning py-2 small mb-0" role="alert">{{ 'calmfox_inpost.admin.not_configured'|trans }}</div>
+        {% elseif not s.dispatched %}
+            {% if row.insuranceExceeded %}
+                <div class="alert alert-warning py-2 small" role="alert">{{ 'calmfox_inpost.admin.insurance_exceeded'|trans }}</div>
+            {% endif %}
+            <form method="post" action="{{ path('calmfox_inpost_admin_dispatch', {id: s.id}) }}" class="row g-2 align-items-end">
+                <input type="hidden" name="_csrf_token" value="{{ csrf_token(row.csrfTokenId) }}">
+                {% if row.requiresPoint %}
+                    <div class="col-auto">
+                        <label class="form-label small mb-1" for="calmfox-inpost-template-{{ s.id }}">{{ 'calmfox_inpost.admin.template'|trans }}</label>
+                        <select class="form-select" name="template" id="calmfox-inpost-template-{{ s.id }}">
+                            {% for template in ['small', 'medium', 'large'] %}
+                                <option value="{{ template }}" {{ template == row.lockerTemplate ? 'selected' }}>{{ ('calmfox_inpost.admin.template_' ~ template)|trans }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                {% else %}
+                    {% for field in ['length', 'width', 'height'] %}
+                        <div class="col-auto">
+                            <label class="form-label small mb-1" for="calmfox-inpost-{{ field }}-{{ s.id }}">{{ ('calmfox_inpost.admin.' ~ field)|trans }}</label>
+                            <input class="form-control" style="width: 6rem" type="number" min="1" step="0.1" name="{{ field }}" id="calmfox-inpost-{{ field }}-{{ s.id }}" value="{{ row.courierParcel[field] }}" required>
+                        </div>
+                    {% endfor %}
+                    <div class="col-auto">
+                        <label class="form-label small mb-1" for="calmfox-inpost-weight-{{ s.id }}">{{ 'calmfox_inpost.admin.weight'|trans }}</label>
+                        <input class="form-control" style="width: 6rem" type="number" min="0.01" step="0.01" name="weight" id="calmfox-inpost-weight-{{ s.id }}" value="{{ row.courierParcel.weight }}" required>
+                    </div>
+                {% endif %}
+                <div class="col-auto">
+                    <label class="form-label small mb-1" for="calmfox-inpost-insurance-{{ s.id }}">{{ 'calmfox_inpost.admin.insurance'|trans({'%currency%': order.currencyCode}) }}</label>
+                    <input class="form-control" style="width: 8rem" type="text" inputmode="decimal" name="insurance" id="calmfox-inpost-insurance-{{ s.id }}"
+                           value="{{ row.insuranceAmount ? (row.insuranceAmount / 100)|number_format(2, ',', '') : '' }}">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary">{{ 'calmfox_inpost.admin.dispatch'|trans }}</button>
+                </div>
+            </form>
+        {% else %}
+            <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-sm {{ row.hasLabel ? 'btn-primary' : 'btn-outline-secondary' }}" href="{{ path('calmfox_inpost_admin_label', {id: s.id}) }}" target="_blank" rel="noopener">{{ 'calmfox_inpost.admin.label'|trans }}</a>
+                {% if not row.isFinal %}
+                    <form method="post" action="{{ path('calmfox_inpost_admin_refresh', {id: s.id}) }}">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token(row.csrfTokenId) }}">
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">{{ 'calmfox_inpost.admin.refresh'|trans }}</button>
+                    </form>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+{% endfor %}

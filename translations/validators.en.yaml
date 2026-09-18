@@ -1,0 +1,5 @@
+calmfox_inpost:
+    checkout:
+        point_required: 'Choose the parcel locker we should ship your order to.'
+        point_unknown: 'Parcel locker %point% does not exist or is out of service. Choose another one.'
+        phone_invalid: 'InPost sends the pickup code by SMS. Go back to the address and enter a Polish mobile number (9 digits).'

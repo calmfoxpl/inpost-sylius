@@ -1,0 +1,56 @@
+{
+    "name": "calmfox/inpost-sylius",
+    "description": "InPost (ShipX) dla Syliusa 2: wybór paczkomatu w koszyku bez mapy i dodatkowych tokenów, nadanie przesyłki jednym kliknięciem w zamówieniu, etykiety i numery nadania. Bez zmian w encjach sklepu.",
+    "type": "sylius-plugin",
+    "keywords": ["sylius", "sylius-plugin", "inpost", "paczkomaty", "shipx", "shipping", "parcel-locker"],
+    "license": "MIT",
+    "homepage": "https://calmfox.pl",
+    "authors": [
+        {
+            "name": "Calmfox",
+            "email": "kontakt@calmfox.pl",
+            "homepage": "https://calmfox.pl"
+        }
+    ],
+    "require": {
+        "php": ">=8.2",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "doctrine/doctrine-bundle": "^2.11",
+        "doctrine/orm": "^2.17 || ^3.0",
+        "psr/cache": "^2.0 || ^3.0",
+        "sylius/sylius": "^2.0",
+        "symfony/config": "^6.4 || ^7.0",
+        "symfony/console": "^6.4 || ^7.0",
+        "symfony/dependency-injection": "^6.4 || ^7.0",
+        "symfony/form": "^6.4 || ^7.0",
+        "symfony/framework-bundle": "^6.4 || ^7.0",
+        "symfony/http-client-contracts": "^3.0",
+        "symfony/http-foundation": "^6.4 || ^7.0",
+        "symfony/http-kernel": "^6.4 || ^7.0",
+        "symfony/routing": "^6.4 || ^7.0",
+        "symfony/security-csrf": "^6.4 || ^7.0",
+        "symfony/translation-contracts": "^3.0",
+        "symfony/validator": "^6.4 || ^7.0",
+        "twig/twig": "^3.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5 || ^11.0 || ^12.0",
+        "symfony/http-client": "^6.4 || ^7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Calmfox\\InPostBundle\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Calmfox\\InPostBundle\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
