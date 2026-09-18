@@ -107,6 +107,12 @@ Przełączenie dotyczy tylko nowych przesyłek. Przesyłka nadana w sandboxie ro
 bin/console calmfox:inpost:sync
 ```
 
+Stan integracji z wiersza poleceń — tryb, skąd pochodzą dane obu kont, czy ShipX je przyjmuje i czy konto ma usługi używane przez metody dostawy (bez wypisywania sekretów):
+
+```bash
+bin/console calmfox:inpost:status
+```
+
 **Wygląd** — arkusz `public/inpost.css` jest neutralny. Dopasuj go zmiennymi `--calmfox-inpost-border`, `--calmfox-inpost-accent`, `--calmfox-inpost-muted` albo nadpisując klasy `.calmfox-inpost__*`. Szablony: `@CalmfoxInPost/shop/point_picker.html.twig`, `@CalmfoxInPost/admin/shipments.html.twig`.
 
 ## Przydatne adresy

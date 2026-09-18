@@ -6,6 +6,7 @@ use Calmfox\InPostBundle\Api\PointsClient;
 use Calmfox\InPostBundle\Api\ShipXClients;
 use Calmfox\InPostBundle\Checkout\Geowidget;
 use Calmfox\InPostBundle\Checkout\ShipmentTypeExtension;
+use Calmfox\InPostBundle\Command\StatusCommand;
 use Calmfox\InPostBundle\Command\SyncCommand;
 use Calmfox\InPostBundle\Controller\AdminSettingsController;
 use Calmfox\InPostBundle\Controller\AdminShipmentController;
@@ -136,6 +137,16 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set(AdminMenuListener::class)
         ->tag('kernel.event_listener', ['event' => 'sylius.menu.admin.main', 'method' => '__invoke']);
+
+    $services->set(StatusCommand::class)
+        ->args([
+            service(Environment::class),
+            service(CredentialsProvider::class),
+            service(ShipXClients::class),
+            service(Geowidget::class),
+            service(MethodMap::class),
+        ])
+        ->tag('console.command');
 
     $services->set(SyncCommand::class)
         ->args([service(InPostShipmentRepository::class), service(Dispatcher::class)])

@@ -107,6 +107,12 @@ Switching affects new shipments only. A shipment dispatched in the sandbox keeps
 bin/console calmfox:inpost:sync
 ```
 
+To check the setup from the command line — mode, where each account's credentials come from, whether ShipX accepts them and whether the account has the services your shipping methods use (no secrets are printed):
+
+```bash
+bin/console calmfox:inpost:status
+```
+
 **Look** — `public/inpost.css` is neutral. Adjust it with `--calmfox-inpost-border`, `--calmfox-inpost-accent`, `--calmfox-inpost-muted`, or override the `.calmfox-inpost__*` classes. Templates: `@CalmfoxInPost/shop/point_picker.html.twig`, `@CalmfoxInPost/admin/shipments.html.twig`. Translations ship in Polish and English.
 
 ## Useful links
