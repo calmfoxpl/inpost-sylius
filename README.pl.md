@@ -6,7 +6,7 @@ InPost (ShipX) dla Syliusa 2. Paczkomaty i kurier z jednego konta, bez zmian w e
 
 - **Koszyk:** klient wybiera paczkomat z listy najbliższych punktów (po kodzie pocztowym, mieście albo kodzie paczkomatu). Bez mapy osadzanej z cudzej domeny, bez dodatkowego tokenu, bez webpacka.
 - **Panel:** w zamówieniu, pod przesyłkami — „Nadaj w InPost" (gabaryt albo wymiary, ubezpieczenie podpowiedziane z wartości zamówienia, pobranie przy płatności przy odbiorze), status, numer nadania, etykieta PDF prosto z InPostu.
-- **Przełącznik sandboxa w panelu:** Konfiguracja → InPost przełącza między kontem produkcyjnym a testowym, sprawdza połączenie i zbiera potrzebne adresy. Każda przesyłka pamięta tryb, w którym powstała.
+- **Ustawienia w panelu:** Konfiguracja → InPost trzyma dane konta produkcyjnego i sandboxowego (pole tokenu jest jednostronne, a token leży w bazie zaszyfrowany), przełącza między nimi, sprawdza połączenie i zbiera potrzebne adresy. Każda przesyłka pamięta tryb, w którym powstała.
 - **Dane:** jedna tabela `calmfox_inpost_shipment` powiązana z przesyłką Syliusa. Numer nadania trafia też do pola `tracking` przesyłki, więc widzi go e-mail „wysłano" i konto klienta.
 
 ## Wymagania
@@ -36,13 +36,14 @@ calmfox_inpost_admin:
     prefix: '/%sylius_admin.path_name%'
 ```
 
-`config/packages/calmfox_inpost.yaml`:
+`config/packages/calmfox_inpost.yaml` — wymagana jest tylko mapa metod; dane konta można zamiast tego wpisać w panelu:
 
 ```yaml
 calmfox_inpost:
+    # Opcjonalne. To, co zapisano w panelu (Konfiguracja → InPost), wygrywa z tymi wartościami.
     api_token: '%env(INPOST_API_TOKEN)%'
     organization_id: '%env(INPOST_ORGANIZATION_ID)%'
-    sandbox_api_token: '%env(INPOST_SANDBOX_API_TOKEN)%'            # opcjonalnie, do testów
+    sandbox_api_token: '%env(INPOST_SANDBOX_API_TOKEN)%'
     sandbox_organization_id: '%env(INPOST_SANDBOX_ORGANIZATION_ID)%'
     methods:
         inpost_point: inpost_locker_standard   # kod metody dostawy w Syliusie → usługa ShipX
@@ -56,14 +57,14 @@ bin/console doctrine:migrations:diff && bin/console doctrine:migrations:migrate
 bin/console assets:install
 ```
 
-Na koniec w panelu Syliusa załóż metody dostawy o kodach z mapy `methods` i przypnij je do kanału. To wszystko — mapowanie encji i miejsca w szablonach paczka dopina sama (Twig Hooks).
+Na koniec w panelu Syliusa załóż metody dostawy o kodach z mapy `methods`, przypnij je do kanału i wpisz dane konta w **Konfiguracja → InPost**. To wszystko — mapowanie encji i miejsca w szablonach paczka dopina sama (Twig Hooks).
 
 ## Konfiguracja
 
 | Klucz | Domyślnie | Znaczenie |
 |---|---|---|
-| `api_token`, `organization_id` | puste | Dane konta ShipX (Manager Paczek → Moje konto → API). Jeden komplet na sklep. |
-| `sandbox_api_token`, `sandbox_organization_id` | puste | Dane osobnego konta sandbox. Potrzebne tylko do testów. |
+| `api_token`, `organization_id` | puste | Dane konta ShipX (Manager Paczek → Moje konto → API). Zapas dla tego, co zapisano w panelu. |
+| `sandbox_api_token`, `sandbox_organization_id` | puste | Dane osobnego konta sandbox. Ta sama zasada zapasu. |
 | `sandbox` | `false` | Tryb startowy. Obowiązuje, dopóki ktoś nie przełączy trybu w panelu (Konfiguracja → InPost); potem rozstrzyga panel. |
 | `methods` | `inpost_point`, `inpost` | Kod metody dostawy → usługa ShipX. Usługi `inpost_locker_*` wymagają wyboru punktu. |
 | `sending_method` | `dispatch_order` | Jak paczka trafia do InPostu: `dispatch_order` (odbiera kurier), `parcel_locker` (nadajesz w paczkomacie), `pop`, `any_point`, `branch`. |
@@ -74,9 +75,15 @@ Na koniec w panelu Syliusa załóż metody dostawy o kodach z mapy `methods` i p
 | `cod_payment_methods` | `[cash_on_delivery]` | Kody metod płatności oznaczających pobranie. Pobranie = kwota zamówienia; ubezpieczenie jest podnoszone co najmniej do kwoty pobrania. |
 | `points_cache_ttl` | `900` | Ile sekund trzymać wyniki wyszukiwania punktów w `cache.app`. |
 
+## Dane konta
+
+Wpisuje się je w panelu, **Konfiguracja → InPost**, osobno dla produkcji i sandboxa. Pole tokenu jest **jednostronne**: token można zapisać, podmienić albo usunąć, ale żadna strona go nie pokaże — ekran mówi tylko, czy token jest i skąd pochodzi (panel / konfiguracja sklepu). W bazie token leży zaszyfrowany (libsodium secretbox) kluczem wyprowadzonym z sekretu aplikacji (`APP_SECRET`), więc nie wycieka ze zrzutami i kopiami zapasowymi. Po zmianie `APP_SECRET` zapisane tokeny przestają się odszyfrowywać i ekran pokaże ich brak — trzeba wkleić je ponownie.
+
+Wolisz sekrety poza bazą? Zostaw pola w panelu puste i ustaw klucze konfiguracji ze zmiennych środowiskowych; są używane zawsze, gdy panel nie ma wartości. Każde pole rozstrzyga się osobno, więc ID organizacji może pochodzić z konfiguracji, a token z panelu.
+
 ## Sandbox
 
-InPost ma pełne środowisko testowe: przesyłki dostają numer nadania i etykietę PDF, ale nikt ich nie odbiera i nic nie kosztują. To **osobne konto z własnym tokenem i ID organizacji** — załóż je w [sandboxowym Managerze Paczek](https://sandbox-manager.paczkomaty.pl), wpisz dane do `sandbox_api_token` / `sandbox_organization_id`, a potem przełącz tryb w panelu: **Konfiguracja → InPost → Przełącz na sandbox**. Na tym samym ekranie jest „Sprawdź połączenie", które powie też, gdy konto nie ma usługi używanej przez Twoje metody dostawy.
+InPost ma pełne środowisko testowe: przesyłki dostają numer nadania i etykietę PDF, ale nikt ich nie odbiera i nic nie kosztują. To **osobne konto z własnym tokenem i ID organizacji** — załóż je w [sandboxowym Managerze Paczek](https://sandbox-manager.paczkomaty.pl), zapisz jego token i ID organizacji w karcie Sandbox na ekranie **Konfiguracja → InPost**, a potem kliknij **Przełącz na sandbox**. Na tym samym ekranie jest „Sprawdź połączenie", które powie też, gdy konto nie ma usługi używanej przez Twoje metody dostawy.
 
 Przełączenie dotyczy tylko nowych przesyłek. Przesyłka nadana w sandboxie rozmawia z sandboxem (status, etykieta) także po powrocie na produkcję, jej testowy numer nadania nie trafia do przesyłki Syliusa, a w zamówieniu ma znaczek „Sandbox". Lista paczkomatów w koszyku zawsze pochodzi z produkcyjnego API punktów — sandbox ma te same punkty.
 

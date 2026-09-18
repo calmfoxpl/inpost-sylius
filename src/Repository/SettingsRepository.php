@@ -23,15 +23,27 @@ class SettingsRepository extends ServiceEntityRepository
 
     public function saveSandbox(bool $sandbox): Settings
     {
-        $settings = $this->findSettings();
-        if (null === $settings) {
-            $settings = new Settings($sandbox);
-            $this->getEntityManager()->persist($settings);
-        } else {
-            $settings->setSandbox($sandbox);
-        }
+        $settings = $this->getOrCreate($sandbox);
+        $settings->setSandbox($sandbox);
         $this->getEntityManager()->flush();
 
         return $settings;
+    }
+
+    /** @param bool $defaultSandbox tryb dla wiersza, którego jeszcze nie ma */
+    public function getOrCreate(bool $defaultSandbox): Settings
+    {
+        $settings = $this->findSettings();
+        if (null === $settings) {
+            $settings = new Settings($defaultSandbox);
+            $this->getEntityManager()->persist($settings);
+        }
+
+        return $settings;
+    }
+
+    public function flush(): void
+    {
+        $this->getEntityManager()->flush();
     }
 }

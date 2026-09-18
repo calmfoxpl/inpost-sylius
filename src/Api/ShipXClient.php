@@ -90,7 +90,7 @@ final class ShipXClient
     private function request(string $method, string $path, array $options = []): ResponseInterface
     {
         if (!$this->isConfigured()) {
-            throw new ShipXException('Brak tokenu API albo identyfikatora organizacji InPost w konfiguracji (calmfox_inpost.api_token, calmfox_inpost.organization_id).');
+            throw new ShipXException('Brak tokenu API albo ID organizacji InPost dla tego trybu. Uzupełnij je w panelu (Konfiguracja → InPost) albo w konfiguracji sklepu.');
         }
 
         $options['headers'] = ['Authorization' => 'Bearer '.$this->apiToken, 'Accept' => 'application/json'] + ($options['headers'] ?? []);

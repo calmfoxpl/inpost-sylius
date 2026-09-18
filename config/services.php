@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use Calmfox\InPostBundle\Api\PointsClient;
-use Calmfox\InPostBundle\Api\ShipXClient;
 use Calmfox\InPostBundle\Api\ShipXClients;
 use Calmfox\InPostBundle\Checkout\ShipmentTypeExtension;
 use Calmfox\InPostBundle\Command\SyncCommand;
@@ -11,9 +10,11 @@ use Calmfox\InPostBundle\Controller\AdminSettingsController;
 use Calmfox\InPostBundle\Controller\AdminShipmentController;
 use Calmfox\InPostBundle\Controller\PointSearchController;
 use Calmfox\InPostBundle\Core\InsurancePolicy;
+use Calmfox\InPostBundle\Core\SecretBox;
 use Calmfox\InPostBundle\Menu\AdminMenuListener;
 use Calmfox\InPostBundle\Repository\InPostShipmentRepository;
 use Calmfox\InPostBundle\Repository\SettingsRepository;
+use Calmfox\InPostBundle\Shipping\CredentialsProvider;
 use Calmfox\InPostBundle\Shipping\Dispatcher;
 use Calmfox\InPostBundle\Shipping\Environment;
 use Calmfox\InPostBundle\Shipping\MethodMap;
@@ -28,28 +29,20 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 return static function (ContainerConfigurator $container): void {
     $services = $container->services()->defaults()->private();
 
-    $services->set('calmfox_inpost.shipx_client.production', ShipXClient::class)->args([
-        service('http_client'),
-        param('calmfox_inpost.api_token'),
-        param('calmfox_inpost.organization_id'),
-        false,
-    ]);
-
-    $services->set('calmfox_inpost.shipx_client.sandbox', ShipXClient::class)->args([
-        service('http_client'),
-        param('calmfox_inpost.sandbox_api_token'),
-        param('calmfox_inpost.sandbox_organization_id'),
-        true,
-    ]);
-
-    $services->set(ShipXClients::class)->args([
-        service('calmfox_inpost.shipx_client.production'),
-        service('calmfox_inpost.shipx_client.sandbox'),
-    ]);
-
     $services->set(SettingsRepository::class)
         ->args([service('doctrine')])
         ->tag('doctrine.repository_service');
+
+    $services->set(SecretBox::class)->args([param('kernel.secret')]);
+
+    $services->set(CredentialsProvider::class)->args([
+        service(SettingsRepository::class),
+        service(SecretBox::class),
+        ['token' => param('calmfox_inpost.api_token'), 'organization_id' => param('calmfox_inpost.organization_id')],
+        ['token' => param('calmfox_inpost.sandbox_api_token'), 'organization_id' => param('calmfox_inpost.sandbox_organization_id')],
+    ]);
+
+    $services->set(ShipXClients::class)->args([service('http_client'), service(CredentialsProvider::class)]);
 
     $services->set(Environment::class)->args([
         service(SettingsRepository::class),
@@ -122,6 +115,9 @@ return static function (ContainerConfigurator $container): void {
             service(Environment::class),
             service(ShipXClients::class),
             service(MethodMap::class),
+            service(CredentialsProvider::class),
+            service(SettingsRepository::class),
+            service(SecretBox::class),
             service('security.csrf.token_manager'),
             service('router'),
             service('translator'),

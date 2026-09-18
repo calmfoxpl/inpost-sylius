@@ -8,6 +8,9 @@ use Calmfox\InPostBundle\Api\ShipXClients;
 use Calmfox\InPostBundle\Api\ShipXException;
 use Calmfox\InPostBundle\CalmfoxInPostBundle;
 use Calmfox\InPostBundle\Core\Links;
+use Calmfox\InPostBundle\Core\SecretBox;
+use Calmfox\InPostBundle\Repository\SettingsRepository;
+use Calmfox\InPostBundle\Shipping\CredentialsProvider;
 use Calmfox\InPostBundle\Shipping\Environment;
 use Calmfox\InPostBundle\Shipping\MethodMap;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -22,9 +25,12 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 use Twig\Environment as Twig;
 
 /**
- * Ekran „InPost" w konfiguracji panelu: przełącznik trybu (produkcja / sandbox), stan obu
- * kompletów danych konta z testem połączenia i odnośniki, po które operator sięga przy pracy.
- * Tokenów tu się nie wpisuje ani nie ogląda — ekran mówi tylko, czy są.
+ * Ekran „InPost" w konfiguracji panelu: przełącznik trybu (produkcja / sandbox), dane obu kont
+ * z testem połączenia i odnośniki, po które operator sięga przy pracy.
+ *
+ * Token jest polem JEDNOSTRONNYM: da się go zapisać, podmienić albo usunąć, ale żadna odpowiedź
+ * tego kontrolera go nie zawiera — ani w HTML-u, ani w komunikatach. Ekran mówi tylko, czy token
+ * jest i skąd pochodzi (panel / konfiguracja sklepu).
  */
 final class AdminSettingsController
 {
@@ -35,6 +41,9 @@ final class AdminSettingsController
         private readonly Environment $environment,
         private readonly ShipXClients $clients,
         private readonly MethodMap $methodMap,
+        private readonly CredentialsProvider $credentials,
+        private readonly SettingsRepository $settings,
+        private readonly SecretBox $secretBox,
         private readonly CsrfTokenManagerInterface $csrfTokenManager,
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly TranslatorInterface $translator,
@@ -45,15 +54,48 @@ final class AdminSettingsController
     {
         return new Response($this->twig->render('@CalmfoxInPost/admin/settings.html.twig', [
             'sandbox' => $this->environment->isSandbox(),
-            'environments' => [
-                ['sandbox' => false, 'configured' => $this->clients->get(false)->isConfigured(), 'manager' => Links::manager(false)],
-                ['sandbox' => true, 'configured' => $this->clients->get(true)->isConfigured(), 'manager' => Links::manager(true)],
-            ],
+            'environments' => [$this->describe(false), $this->describe(true)],
             'methods' => $this->methodMap->all(),
             'links' => Links::forOperator(),
             'version' => CalmfoxInPostBundle::VERSION,
             'csrf_id' => self::CSRF_ID,
         ]));
+    }
+
+    public function saveCredentials(Request $request): Response
+    {
+        $this->assertCsrf($request);
+        $sandbox = '1' === (string) $request->request->get('sandbox');
+
+        $token = trim((string) $request->request->get('api_token', ''));
+        $settings = $this->settings->getOrCreate($this->environment->isSandbox());
+
+        if ('1' === (string) $request->request->get('remove_token')) {
+            $settings->setEncryptedToken($sandbox, null);
+        } elseif ('' !== $token) {
+            // Token ShipX to JWT: trzy człony base64url. Wklejony z obciętym końcem i tak by nie
+            // zadziałał (tak skończyła druga bramka w poprzedniej integracji) — lepiej powiedzieć od razu.
+            if (1 !== preg_match('/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/', $token)) {
+                $this->flash($request, 'error', $this->translator->trans('calmfox_inpost.settings.flash.token_malformed'));
+
+                return $this->back();
+            }
+            $settings->setEncryptedToken($sandbox, $this->secretBox->encrypt($token));
+        }
+        // Puste pole tokenu = zostaw zapisany bez zmian.
+
+        $organizationId = trim((string) $request->request->get('organization_id', ''));
+        if ('' !== $organizationId && 1 !== preg_match('/^\d{1,32}$/', $organizationId)) {
+            $this->flash($request, 'error', $this->translator->trans('calmfox_inpost.settings.flash.organization_malformed'));
+
+            return $this->back();
+        }
+        $settings->setOrganizationId($sandbox, $organizationId);
+
+        $this->settings->flush();
+        $this->flash($request, 'success', $this->translator->trans('calmfox_inpost.settings.flash.credentials_saved'));
+
+        return $this->back();
     }
 
     public function switchMode(Request $request): Response
@@ -92,6 +134,28 @@ final class AdminSettingsController
         }
 
         return $this->back();
+    }
+
+    /** @return array<string, mixed> opis konta dla szablonu — bez tokenu */
+    private function describe(bool $sandbox): array
+    {
+        $credentials = $this->credentials->get($sandbox);
+        $stored = null;
+        try {
+            $stored = $this->settings->findSettings();
+        } catch (\Throwable) {
+        }
+
+        return [
+            'sandbox' => $sandbox,
+            'configured' => $credentials->isComplete(),
+            'tokenSource' => $credentials->tokenSource,
+            'organizationSource' => $credentials->organizationSource,
+            'organizationId' => $credentials->organizationId,
+            'panelOrganizationId' => (string) $stored?->getOrganizationId($sandbox),
+            'hasPanelToken' => null !== $stored?->getEncryptedToken($sandbox),
+            'manager' => Links::manager($sandbox),
+        ];
     }
 
     private function assertCsrf(Request $request): void

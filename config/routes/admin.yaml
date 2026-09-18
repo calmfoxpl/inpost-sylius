@@ -32,3 +32,8 @@ calmfox_inpost_admin_settings_test:
     path: /inpost/settings/test
     methods: [POST]
     controller: Calmfox\InPostBundle\Controller\AdminSettingsController::test
+
+calmfox_inpost_admin_settings_credentials:
+    path: /inpost/settings/credentials
+    methods: [POST]
+    controller: Calmfox\InPostBundle\Controller\AdminSettingsController::saveCredentials

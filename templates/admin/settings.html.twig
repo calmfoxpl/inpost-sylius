@@ -45,12 +45,39 @@
                                 </div>
                                 <div class="card-body">
                                     <p class="text-secondary">{{ (environment.sandbox ? 'calmfox_inpost.settings.sandbox_help' : 'calmfox_inpost.settings.production_help')|trans }}</p>
-                                    <p class="small mb-0">
-                                        {{ 'calmfox_inpost.settings.credentials_in'|trans }}
-                                        <code>{{ environment.sandbox ? 'calmfox_inpost.sandbox_api_token' : 'calmfox_inpost.api_token' }}</code>,
-                                        <code>{{ environment.sandbox ? 'calmfox_inpost.sandbox_organization_id' : 'calmfox_inpost.organization_id' }}</code>.
-                                        <a href="{{ environment.manager }}" target="_blank" rel="noopener">{{ 'calmfox_inpost.settings.get_token'|trans }}</a>
-                                    </p>
+                                    <form method="post" action="{{ path('calmfox_inpost_admin_settings_credentials') }}" autocomplete="off">
+                                        <input type="hidden" name="_csrf_token" value="{{ csrf_token(csrf_id) }}">
+                                        <input type="hidden" name="sandbox" value="{{ environment.sandbox ? '1' : '0' }}">
+                                        {% set suffix = environment.sandbox ? 'sandbox' : 'production' %}
+
+                                        <div class="mb-3">
+                                            <label class="form-label" for="calmfox-inpost-token-{{ suffix }}">
+                                                {{ 'calmfox_inpost.settings.token'|trans }}
+                                                <span class="badge ms-1 {{ environment.tokenSource == 'none' ? 'bg-red-lt' : 'bg-green-lt' }}">{{ ('calmfox_inpost.settings.source_' ~ environment.tokenSource)|trans }}</span>
+                                            </label>
+                                            {# Pole jednostronne: nigdy nie dostaje wartości z serwera. Puste = zostaw zapisany token. #}
+                                            <input type="password" class="form-control" id="calmfox-inpost-token-{{ suffix }}" name="api_token" value=""
+                                                   autocomplete="new-password" spellcheck="false"
+                                                   placeholder="{{ (environment.hasPanelToken ? 'calmfox_inpost.settings.token_placeholder_replace' : 'calmfox_inpost.settings.token_placeholder_new')|trans }}">
+                                            <div class="form-hint">{{ 'calmfox_inpost.settings.token_hint'|trans }} <a href="{{ environment.manager }}" target="_blank" rel="noopener">{{ 'calmfox_inpost.settings.get_token'|trans }}</a></div>
+                                            {% if environment.hasPanelToken %}
+                                                <label class="form-check mt-2">
+                                                    <input type="checkbox" class="form-check-input" id="calmfox-inpost-remove-{{ suffix }}" name="remove_token" value="1">
+                                                    <span class="form-check-label">{{ 'calmfox_inpost.settings.remove_token'|trans }}</span>
+                                                </label>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="form-label" for="calmfox-inpost-org-{{ suffix }}">
+                                                {{ 'calmfox_inpost.settings.organization_id'|trans }}
+                                                {% if environment.organizationSource == 'config' %}<span class="badge ms-1 bg-green-lt">{{ 'calmfox_inpost.settings.source_config'|trans }}: {{ environment.organizationId }}</span>{% endif %}
+                                            </label>
+                                            <input type="text" inputmode="numeric" class="form-control" id="calmfox-inpost-org-{{ suffix }}" name="organization_id" value="{{ environment.panelOrganizationId }}">
+                                        </div>
+
+                                        <button type="submit" class="btn btn-outline-primary">{{ 'calmfox_inpost.settings.save_credentials'|trans }}</button>
+                                    </form>
                                 </div>
                                 <div class="card-footer d-flex flex-wrap gap-2">
                                     {% if not active %}

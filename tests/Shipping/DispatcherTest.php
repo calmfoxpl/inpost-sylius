@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace Calmfox\InPostBundle\Tests\Shipping;
 
-use Calmfox\InPostBundle\Api\ShipXClient;
 use Calmfox\InPostBundle\Api\ShipXClients;
 use Calmfox\InPostBundle\Api\ShipXException;
 use Calmfox\InPostBundle\Core\InsurancePolicy;
 use Calmfox\InPostBundle\Core\Parcel;
+use Calmfox\InPostBundle\Core\SecretBox;
 use Calmfox\InPostBundle\Core\Service;
 use Calmfox\InPostBundle\Entity\InPostShipment;
 use Calmfox\InPostBundle\Entity\Settings;
 use Calmfox\InPostBundle\Repository\SettingsRepository;
+use Calmfox\InPostBundle\Shipping\CredentialsProvider;
 use Calmfox\InPostBundle\Shipping\Dispatcher;
 use Calmfox\InPostBundle\Shipping\Environment;
 use Calmfox\InPostBundle\Shipping\ShipmentRequestFactory;
@@ -136,7 +137,12 @@ final class DispatcherTest extends TestCase
         $settings->method('findSettings')->willReturn(new Settings($sandbox));
 
         return new Dispatcher(
-            new ShipXClients(new ShipXClient($http, 'tok', '98765'), new ShipXClient($http, 'sandbox-tok', '111', true)),
+            new ShipXClients($http, new CredentialsProvider(
+                $settings,
+                new SecretBox('test-secret'),
+                ['token' => 'tok', 'organization_id' => '98765'],
+                ['token' => 'sandbox-tok', 'organization_id' => '111'],
+            )),
             new Environment($settings, false),
             new ShipmentRequestFactory(new InsurancePolicy(), ['cash_on_delivery'], 'dispatch_order'),
             $this->createStub(EntityManagerInterface::class),
