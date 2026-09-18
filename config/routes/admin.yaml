@@ -17,3 +17,18 @@ calmfox_inpost_admin_label:
     methods: [GET]
     controller: Calmfox\InPostBundle\Controller\AdminShipmentController::label
     requirements: { id: '\d+' }
+
+calmfox_inpost_admin_settings:
+    path: /inpost/settings
+    methods: [GET]
+    controller: Calmfox\InPostBundle\Controller\AdminSettingsController::index
+
+calmfox_inpost_admin_settings_mode:
+    path: /inpost/settings/mode
+    methods: [POST]
+    controller: Calmfox\InPostBundle\Controller\AdminSettingsController::switchMode
+
+calmfox_inpost_admin_settings_test:
+    path: /inpost/settings/test
+    methods: [POST]
+    controller: Calmfox\InPostBundle\Controller\AdminSettingsController::test

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Calmfox\InPostBundle\Shipping;
 
-use Calmfox\InPostBundle\Api\ShipXClient;
+use Calmfox\InPostBundle\Api\ShipXClients;
 use Calmfox\InPostBundle\Api\ShipXException;
 use Calmfox\InPostBundle\Core\InvalidShipmentException;
 use Calmfox\InPostBundle\Core\Parcel;
@@ -24,7 +24,8 @@ final class Dispatcher
 
     /** @param (\Closure(int): void)|null $sleep podmieniane w testach, żeby nie czekać naprawdę */
     public function __construct(
-        private readonly ShipXClient $client,
+        private readonly ShipXClients $clients,
+        private readonly Environment $environment,
         private readonly ShipmentRequestFactory $requestFactory,
         private readonly EntityManagerInterface $entityManager,
         private readonly int $confirmationAttempts = 4,
@@ -44,9 +45,11 @@ final class Dispatcher
             throw new InvalidShipmentException(sprintf('Przesyłka jest już nadana w InPost (%s).', $shipment->getShipxId()));
         }
 
+        $sandbox = $this->environment->isSandbox();
+
         try {
             $payload = $this->requestFactory->create($shipment, $parcel, $insuranceAmount)->toPayload();
-            $created = $this->client->createShipment($payload);
+            $created = $this->clients->get($sandbox)->createShipment($payload);
         } catch (InvalidShipmentException|ShipXException $e) {
             $shipment->markFailed($e instanceof ShipXException ? $e->getOperatorMessage() : $e->getMessage());
             $this->entityManager->flush();
@@ -59,7 +62,7 @@ final class Dispatcher
             throw new ShipXException('InPost przyjął żądanie, ale nie zwrócił identyfikatora przesyłki.');
         }
 
-        $shipment->markDispatched((string) $id, \is_string($created['status'] ?? null) ? $created['status'] : 'created');
+        $shipment->markDispatched((string) $id, \is_string($created['status'] ?? null) ? $created['status'] : 'created', $sandbox);
         $this->apply($shipment, $created);
         $this->entityManager->flush();
 
@@ -84,7 +87,7 @@ final class Dispatcher
             return;
         }
 
-        $this->apply($shipment, $this->client->getShipment($shipxId));
+        $this->apply($shipment, $this->clients->get($shipment->isSandbox())->getShipment($shipxId));
         $this->entityManager->flush();
     }
 
@@ -103,7 +106,7 @@ final class Dispatcher
             throw new InvalidShipmentException('InPost jeszcze nie potwierdził przesyłki — etykieta będzie dostępna za chwilę.');
         }
 
-        return $this->client->getLabel($shipxId);
+        return $this->clients->get($shipment->isSandbox())->getLabel($shipxId);
     }
 
     /** @param array<string, mixed> $data */
@@ -115,7 +118,8 @@ final class Dispatcher
         $shipment->updateFromShipX($status, $tracking);
 
         // Numer trafia też do przesyłki Syliusa: stamtąd biorą go e-mail „wysłano" i konto klienta.
-        if (null !== $tracking && '' !== $tracking && null === $shipment->getShipment()->getTracking()) {
+        // Sandboxowego nie przepisujemy — klient dostałby numer, którego nie da się śledzić.
+        if (!$shipment->isSandbox() && null !== $tracking && '' !== $tracking && null === $shipment->getShipment()->getTracking()) {
             $shipment->getShipment()->setTracking($tracking);
         }
     }

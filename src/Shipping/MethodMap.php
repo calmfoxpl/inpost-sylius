@@ -33,6 +33,12 @@ final class MethodMap
         return null !== $service && Service::requiresPoint($service);
     }
 
+    /** @return array<string, string> kod metody dostawy → usługa ShipX */
+    public function all(): array
+    {
+        return $this->services;
+    }
+
     /** @return list<string> kody metod, przy których klient wybiera punkt */
     public function pointMethodCodes(): array
     {

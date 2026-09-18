@@ -6,6 +6,7 @@ InPost (ShipX) for Sylius 2. Parcel lockers and courier from a single account, w
 
 - **Checkout:** the customer picks a parcel locker from a list of the nearest points (by postcode, city or locker code). No third-party map embed, no extra token, no webpack.
 - **Admin:** on the order page, below the shipments — "Dispatch with InPost" (locker size or parcel dimensions, insurance suggested from the order total, cash on delivery when the order is paid on delivery), status, tracking number and the label PDF straight from InPost.
+- **Sandbox switch in the admin:** Configuration → InPost toggles between the production and the sandbox account, tests the connection and lists the links you need. Every shipment remembers the mode it was created in.
 - **Data:** one table, `calmfox_inpost_shipment`, linked to the Sylius shipment. The tracking number is also copied to the shipment's `tracking` field, so the "shipped" e-mail and the customer account see it.
 
 ## Requirements
@@ -41,6 +42,8 @@ calmfox_inpost_admin:
 calmfox_inpost:
     api_token: '%env(INPOST_API_TOKEN)%'
     organization_id: '%env(INPOST_ORGANIZATION_ID)%'
+    sandbox_api_token: '%env(INPOST_SANDBOX_API_TOKEN)%'            # optional, for testing
+    sandbox_organization_id: '%env(INPOST_SANDBOX_ORGANIZATION_ID)%'
     methods:
         inpost_point: inpost_locker_standard   # Sylius shipping method code → ShipX service
         inpost: inpost_courier_standard
@@ -60,7 +63,8 @@ Finally, create shipping methods in the Sylius admin with the codes from the `me
 | Key | Default | Meaning |
 |---|---|---|
 | `api_token`, `organization_id` | empty | ShipX account credentials (Parcel Manager → My account → API). One set per shop. |
-| `sandbox` | `false` | `true` targets `sandbox-api-shipx-pl.easypack24.net` (the sandbox token is a separate one). |
+| `sandbox_api_token`, `sandbox_organization_id` | empty | Credentials of the separate sandbox account. Needed only if you want to test. |
+| `sandbox` | `false` | Starting mode. Applies until someone switches the mode in the admin (Configuration → InPost); after that the admin choice wins. |
 | `methods` | `inpost_point`, `inpost` | Shipping method code → ShipX service. `inpost_locker_*` services require a pickup point. |
 | `sending_method` | `dispatch_order` | How the parcel reaches InPost: `dispatch_order` (courier pickup), `parcel_locker` (you drop it at a locker), `pop`, `any_point`, `branch`. |
 | `locker_template` | `small` | Size suggested when dispatching: `small` (A), `medium` (B), `large` (C). |
@@ -69,6 +73,12 @@ Finally, create shipping methods in the Sylius admin with the codes from the `me
 | `insurance.max_amount` | `null` | Insurance cap in minor units. Cut off more expensive orders with the built-in "order total ≤" shipping method rule. |
 | `cod_payment_methods` | `[cash_on_delivery]` | Payment method codes that mean cash on delivery. COD equals the order total; insurance is raised to at least the COD amount. |
 | `points_cache_ttl` | `900` | Seconds to keep point search results in `cache.app`. |
+
+## Sandbox
+
+InPost runs a full test environment: shipments get a tracking number and a label PDF, but are never collected and cost nothing. It is a **separate account with its own token and organization ID** — create it in the [sandbox Parcel Manager](https://sandbox-manager.paczkomaty.pl), put the credentials in `sandbox_api_token` / `sandbox_organization_id`, then switch the mode in the admin: **Configuration → InPost → Switch to sandbox**. The same screen has a "Test connection" button that also tells you when the account lacks a service your shipping methods use.
+
+Switching affects new shipments only. A shipment dispatched in the sandbox keeps talking to the sandbox (status, label) after you go back to production, its sandbox tracking number is never copied to the Sylius shipment, and the order page marks it with a "Sandbox" badge. The list of parcel lockers in checkout always comes from the production points API — the sandbox shares the same points.
 
 ## How it works
 
@@ -83,6 +93,20 @@ bin/console calmfox:inpost:sync
 ```
 
 **Look** — `public/inpost.css` is neutral. Adjust it with `--calmfox-inpost-border`, `--calmfox-inpost-accent`, `--calmfox-inpost-muted`, or override the `.calmfox-inpost__*` classes. Templates: `@CalmfoxInPost/shop/point_picker.html.twig`, `@CalmfoxInPost/admin/shipments.html.twig`. Translations ship in Polish and English.
+
+## Useful links
+
+The same list is shown in the admin under Configuration → InPost.
+
+| | |
+|---|---|
+| Parcel Manager — production account, API token, pickup orders | https://manager.paczkomaty.pl |
+| Parcel Manager Sandbox — test account and token | https://sandbox-manager.paczkomaty.pl |
+| ShipX API documentation | https://dokumentacja-inpost.atlassian.net/wiki/spaces/PL/overview |
+| Shipment tracking | https://inpost.pl/sledzenie-przesylek |
+| Parcel locker map | https://inpost.pl/znajdz-paczkomat |
+| Contact InPost | https://inpost.pl/kontakt |
+| Report a bug in this package | https://github.com/calmfoxpl/inpost-sylius/issues |
 
 ## What it does not do
 

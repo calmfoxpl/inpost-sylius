@@ -1,0 +1,110 @@
+{# Ekran Konfiguracja → InPost. Sylius 2 składa stronę panelu z haczyków, a szablon bazowy ma
+   tylko blok `body` — menu boczne i belkę dokładamy więc sami, jak robią to strony CRUD. #}
+{% extends '@SyliusAdmin/shared/layout/base.html.twig' %}
+
+{% block title %}{{ 'calmfox_inpost.settings.title'|trans }} | {{ parent() }}{% endblock %}
+
+{% block body %}
+    {% include '@SyliusAdmin/shared/crud/common/sidebar.html.twig' %}
+    {% include '@SyliusAdmin/shared/crud/common/navbar.html.twig' %}
+
+    <div class="page-wrapper">
+        <div class="page-header d-print-none">
+            <div class="container-xl">
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <h1 class="page-title mb-0">{{ 'calmfox_inpost.settings.title'|trans }}</h1>
+                    <span class="badge {{ sandbox ? 'bg-yellow-lt' : 'bg-green-lt' }}" data-calmfox-inpost-mode>
+                        {{ (sandbox ? 'calmfox_inpost.settings.mode_sandbox' : 'calmfox_inpost.settings.mode_production')|trans }}
+                    </span>
+                </div>
+                <div class="text-secondary mt-1">{{ 'calmfox_inpost.settings.lead'|trans }}</div>
+            </div>
+        </div>
+
+        <div class="page-body">
+            <div class="container-xl">
+                {% for type, messages in app.flashes %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ type == 'error' ? 'danger' : type }}" role="alert">{{ message }}</div>
+                    {% endfor %}
+                {% endfor %}
+
+                <div class="row row-cards">
+                    {% for environment in environments %}
+                        {% set active = environment.sandbox == sandbox %}
+                        <div class="col-md-6">
+                            <div class="card h-100 {{ active ? 'border-primary' }}">
+                                <div class="card-header">
+                                    <h3 class="card-title">{{ (environment.sandbox ? 'calmfox_inpost.settings.sandbox' : 'calmfox_inpost.settings.production')|trans }}</h3>
+                                    <div class="card-actions d-flex gap-1">
+                                        {% if active %}<span class="badge bg-primary-lt">{{ 'calmfox_inpost.settings.active'|trans }}</span>{% endif %}
+                                        <span class="badge {{ environment.configured ? 'bg-green-lt' : 'bg-red-lt' }}">
+                                            {{ (environment.configured ? 'calmfox_inpost.settings.configured' : 'calmfox_inpost.settings.not_configured')|trans }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-secondary">{{ (environment.sandbox ? 'calmfox_inpost.settings.sandbox_help' : 'calmfox_inpost.settings.production_help')|trans }}</p>
+                                    <p class="small mb-0">
+                                        {{ 'calmfox_inpost.settings.credentials_in'|trans }}
+                                        <code>{{ environment.sandbox ? 'calmfox_inpost.sandbox_api_token' : 'calmfox_inpost.api_token' }}</code>,
+                                        <code>{{ environment.sandbox ? 'calmfox_inpost.sandbox_organization_id' : 'calmfox_inpost.organization_id' }}</code>.
+                                        <a href="{{ environment.manager }}" target="_blank" rel="noopener">{{ 'calmfox_inpost.settings.get_token'|trans }}</a>
+                                    </p>
+                                </div>
+                                <div class="card-footer d-flex flex-wrap gap-2">
+                                    {% if not active %}
+                                        <form method="post" action="{{ path('calmfox_inpost_admin_settings_mode') }}">
+                                            <input type="hidden" name="_csrf_token" value="{{ csrf_token(csrf_id) }}">
+                                            <input type="hidden" name="sandbox" value="{{ environment.sandbox ? '1' : '0' }}">
+                                            <button type="submit" class="btn btn-primary" {{ environment.configured ? '' : 'disabled' }}>
+                                                {{ (environment.sandbox ? 'calmfox_inpost.settings.switch_to_sandbox' : 'calmfox_inpost.settings.switch_to_production')|trans }}
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                    <form method="post" action="{{ path('calmfox_inpost_admin_settings_test') }}">
+                                        <input type="hidden" name="_csrf_token" value="{{ csrf_token(csrf_id) }}">
+                                        <input type="hidden" name="sandbox" value="{{ environment.sandbox ? '1' : '0' }}">
+                                        <button type="submit" class="btn btn-outline-secondary" {{ environment.configured ? '' : 'disabled' }}>{{ 'calmfox_inpost.settings.test'|trans }}</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header"><h3 class="card-title">{{ 'calmfox_inpost.settings.methods'|trans }}</h3></div>
+                            <div class="card-body">
+                                <p class="text-secondary">{{ 'calmfox_inpost.settings.methods_help'|trans }}</p>
+                                <table class="table table-sm mb-0">
+                                    <thead><tr><th>{{ 'calmfox_inpost.settings.method_code'|trans }}</th><th>{{ 'calmfox_inpost.settings.service'|trans }}</th></tr></thead>
+                                    <tbody>
+                                    {% for code, service in methods %}
+                                        <tr><td><code>{{ code }}</code></td><td><code>{{ service }}</code></td></tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header"><h3 class="card-title">{{ 'calmfox_inpost.links.title'|trans }}</h3></div>
+                            <div class="list-group list-group-flush">
+                                {% for link in links %}
+                                    <a class="list-group-item list-group-item-action" href="{{ link.url }}" target="_blank" rel="noopener">
+                                        <div>{{ ('calmfox_inpost.links.' ~ link.key)|trans }}</div>
+                                        <div class="text-secondary small">{{ link.url }}</div>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                            <div class="card-footer text-secondary small">calmfox/inpost-sylius {{ version }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

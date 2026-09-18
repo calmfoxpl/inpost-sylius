@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace Calmfox\InPostBundle\Twig;
 
-use Calmfox\InPostBundle\Api\ShipXClient;
+use Calmfox\InPostBundle\Api\ShipXClients;
 use Calmfox\InPostBundle\Controller\AdminShipmentController;
 use Calmfox\InPostBundle\Core\InsurancePolicy;
+use Calmfox\InPostBundle\Core\Links;
 use Calmfox\InPostBundle\Core\Service;
 use Calmfox\InPostBundle\Core\ShipmentStatus;
 use Calmfox\InPostBundle\Entity\InPostShipment;
 use Calmfox\InPostBundle\Repository\InPostShipmentRepository;
+use Calmfox\InPostBundle\Shipping\Environment;
 use Calmfox\InPostBundle\Shipping\MethodMap;
 use Calmfox\InPostBundle\Shipping\ShipmentRequestFactory;
 use Sylius\Component\Core\Model\OrderInterface;
@@ -27,7 +29,8 @@ final class InPostExtension extends AbstractExtension
         private readonly InPostShipmentRepository $repository,
         private readonly ShipmentRequestFactory $requestFactory,
         private readonly InsurancePolicy $insurancePolicy,
-        private readonly ShipXClient $client,
+        private readonly ShipXClients $clients,
+        private readonly Environment $environment,
         private readonly string $lockerTemplate,
         private readonly array $courierParcel,
     ) {
@@ -54,6 +57,8 @@ final class InPostExtension extends AbstractExtension
         foreach ($this->repository->findByOrder($order) as $shipment) {
             $cod = $this->requestFactory->codAmount($order);
             $status = (string) $shipment->getStatus();
+            // Nadana przesyłka żyje w trybie, w którym powstała; nienadana pójdzie w bieżącym.
+            $sandbox = $shipment->isDispatched() ? $shipment->isSandbox() : $this->environment->isSandbox();
 
             $rows[] = [
                 'shipment' => $shipment,
@@ -65,7 +70,10 @@ final class InPostExtension extends AbstractExtension
                 'codAmount' => $cod,
                 'insuranceAmount' => $this->insurancePolicy->amountFor($order->getTotal()),
                 'insuranceExceeded' => $this->insurancePolicy->exceedsLimit($order->getTotal()),
-                'configured' => $this->client->isConfigured(),
+                'configured' => $this->clients->get($sandbox)->isConfigured(),
+                'sandbox' => $sandbox,
+                'trackingUrl' => null !== $shipment->getTrackingNumber() && !$sandbox ? Links::tracking($shipment->getTrackingNumber()) : null,
+                'managerUrl' => Links::manager($sandbox),
                 'lockerTemplate' => $this->lockerTemplate,
                 'courierParcel' => [
                     'length' => $this->courierParcel['length'] / 10,

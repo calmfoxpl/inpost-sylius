@@ -48,6 +48,10 @@ class InPostShipment
     #[ORM\Column(name: 'tracking_number', type: Types::STRING, length: 64, nullable: true)]
     private ?string $trackingNumber = null;
 
+    /** Tryb, w którym przesyłka powstała w ShipX; sandboxowa istnieje tylko w sandboxie. */
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $sandbox = false;
+
     #[ORM\Column(name: 'last_error', type: Types::TEXT, nullable: true)]
     private ?string $lastError = null;
 
@@ -135,9 +139,15 @@ class InPostShipment
         return $this->dispatchedAt;
     }
 
-    public function markDispatched(string $shipxId, string $status): void
+    public function isSandbox(): bool
+    {
+        return $this->sandbox;
+    }
+
+    public function markDispatched(string $shipxId, string $status, bool $sandbox = false): void
     {
         $this->shipxId = $shipxId;
+        $this->sandbox = $sandbox;
         $this->status = $status;
         $this->lastError = null;
         $this->dispatchedAt = new \DateTimeImmutable();

@@ -22,7 +22,7 @@ final class CalmfoxInPostExtension extends Extension implements PrependExtension
     {
         $config = $this->processConfiguration(new Configuration(), $configs);
 
-        foreach (['api_token', 'organization_id', 'sandbox', 'methods', 'sending_method', 'locker_template', 'courier_parcel', 'cod_payment_methods', 'points_cache_ttl'] as $key) {
+        foreach (['api_token', 'organization_id', 'sandbox_api_token', 'sandbox_organization_id', 'sandbox', 'methods', 'sending_method', 'locker_template', 'courier_parcel', 'cod_payment_methods', 'points_cache_ttl'] as $key) {
             $container->setParameter('calmfox_inpost.'.$key, $config[$key]);
         }
         $container->setParameter('calmfox_inpost.insurance.mode', $config['insurance']['mode']);

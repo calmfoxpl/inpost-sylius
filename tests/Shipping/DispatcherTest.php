@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace Calmfox\InPostBundle\Tests\Shipping;
 
 use Calmfox\InPostBundle\Api\ShipXClient;
+use Calmfox\InPostBundle\Api\ShipXClients;
 use Calmfox\InPostBundle\Api\ShipXException;
 use Calmfox\InPostBundle\Core\InsurancePolicy;
 use Calmfox\InPostBundle\Core\Parcel;
 use Calmfox\InPostBundle\Core\Service;
 use Calmfox\InPostBundle\Entity\InPostShipment;
+use Calmfox\InPostBundle\Entity\Settings;
+use Calmfox\InPostBundle\Repository\SettingsRepository;
 use Calmfox\InPostBundle\Shipping\Dispatcher;
+use Calmfox\InPostBundle\Shipping\Environment;
 use Calmfox\InPostBundle\Shipping\ShipmentRequestFactory;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
@@ -89,10 +93,51 @@ final class DispatcherTest extends TestCase
         $this->dispatcher($http)->dispatch($shipment, Parcel::template('small'));
     }
 
-    private function dispatcher(MockHttpClient $http, ?\Closure $sleep = null): Dispatcher
+    public function testSandboxModeUsesSandboxAccountAndKeepsTestTrackingAwayFromTheCustomer(): void
     {
+        $urls = [];
+        $http = new MockHttpClient(function (string $method, string $url, array $options) use (&$urls): MockResponse {
+            $urls[] = [$url, implode(' ', $options['headers'])];
+
+            return new MockResponse('{"id": 5, "status": "confirmed", "tracking_number": "520000000000000000000009"}', ['http_code' => 201]);
+        });
+        $shipment = $this->shipment();
+
+        $this->dispatcher($http, null, true)->dispatch($shipment, Parcel::template('small'));
+
+        self::assertTrue($shipment->isSandbox());
+        self::assertStringStartsWith('https://sandbox-api-shipx-pl.easypack24.net/v1/organizations/111/', $urls[0][0]);
+        self::assertStringContainsString('Bearer sandbox-tok', $urls[0][1]);
+        self::assertSame('520000000000000000000009', $shipment->getTrackingNumber());
+        self::assertNull($shipment->getShipment()->getTracking(), 'numer testowy nie trafia do przesyłki Syliusa ani do klienta');
+    }
+
+    public function testRefreshFollowsTheShipmentNotTheCurrentMode(): void
+    {
+        $url = '';
+        $http = new MockHttpClient(function (string $method, string $requested) use (&$url): MockResponse {
+            $url = $requested;
+
+            return new MockResponse('{"id": 5, "status": "delivered", "tracking_number": "52"}');
+        });
+        $shipment = $this->shipment();
+        $shipment->markDispatched('5', 'confirmed', true);
+
+        // Sklep wrócił już na produkcję, ale ta przesyłka powstała w sandboxie.
+        $this->dispatcher($http, null, false)->refresh($shipment);
+
+        self::assertStringStartsWith('https://sandbox-api-shipx-pl.easypack24.net/v1/shipments/5', $url);
+        self::assertSame('delivered', $shipment->getStatus());
+    }
+
+    private function dispatcher(MockHttpClient $http, ?\Closure $sleep = null, bool $sandbox = false): Dispatcher
+    {
+        $settings = $this->createStub(SettingsRepository::class);
+        $settings->method('findSettings')->willReturn(new Settings($sandbox));
+
         return new Dispatcher(
-            new ShipXClient($http, 'tok', '98765'),
+            new ShipXClients(new ShipXClient($http, 'tok', '98765'), new ShipXClient($http, 'sandbox-tok', '111', true)),
+            new Environment($settings, false),
             new ShipmentRequestFactory(new InsurancePolicy(), ['cash_on_delivery'], 'dispatch_order'),
             $this->createStub(EntityManagerInterface::class),
             4,
